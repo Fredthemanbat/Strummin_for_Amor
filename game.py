@@ -1,6 +1,7 @@
 import arcade
 from queue import Queue
-
+import random
+import time
 
 class Player(arcade.Sprite):
     def __init__(self):
@@ -36,11 +37,11 @@ class Trumpet_Cactus(arcade.Sprite):
         self.center_y = 700
 
 class Violin_Cactus(arcade.Sprite):
-    def __init__(self):
-        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Violin_cactus.png", 0.25)
+    def __init__(self, scale):
+        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Violin_cactus.png", scale)
 
         self.center_x = 3000
-        self.center_y = 300
+        self.center_y = 500
 
 class queue_stuff():
     def __init__(self) -> None:
@@ -64,6 +65,7 @@ class GameView(arcade.Window):
         self.tile_map = None
         self.camera = None
         self.complete = 0
+        
     
     def setup(self):
         layer_options = {
@@ -71,6 +73,7 @@ class GameView(arcade.Window):
         }
 
         self.camera = arcade.Camera(1000, 650)
+        self.wall_list = arcade.SpriteList()
 
         self.tile_map =  arcade.load_tilemap("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Map.tmx",
                                              scaling=0.5,
@@ -91,7 +94,7 @@ class GameView(arcade.Window):
         self.trumpet = Trumpet_Cactus()
         self.scene.add_sprite('Trumpet', self.trumpet)
 
-        self.violin = Violin_Cactus()
+        self.violin = Violin_Cactus(scale = 0.25)
         self.scene.add_sprite("Violin", self.violin)
 
         self.collect_coin_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 1.wav")
@@ -106,6 +109,17 @@ class GameView(arcade.Window):
         walls=self.scene["Platform"]
         )
 
+        for x in range(100):
+            b = random.randint(1,2)
+            if b == 1:
+                file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Flamin_Taco.png"
+            else: 
+                file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Taco.png"
+            wall = arcade.Sprite(file, 1)
+            wall.center_x = random.randint(120, 2400)
+            wall.center_y = random.randint(600, 900)
+            self.wall_list.append(wall)
+
     def on_update(self, delta_time: float):
         self.physics_engine.update()
         self.scene.update()
@@ -117,11 +131,8 @@ class GameView(arcade.Window):
         violin_hit = arcade.check_for_collision_with_list(self.player, self.scene["Violin"])
         senorita_hit = arcade.check_for_collision_with_list(self.player, self.scene["Senorita"])
 
-        # Loop through each coin we hit (if any) and remove it
         for coin in coin_hit_list:
-            # Remove the coin
             coin.remove_from_sprite_lists()
-            # Play a sound
             arcade.play_sound(self.collect_coin_sound)
             self.complete +=1
 
@@ -140,11 +151,15 @@ class GameView(arcade.Window):
                 senorita.remove_from_sprite_lists()
                 arcade.play_sound(self.full_sound)
 
+        for wall in self.wall_list:
+            wall.center_y -=random.randint(1,3)
 
     def on_draw(self):
         self.clear()
         self.camera.use()
         self.scene.draw()
+        self.wall_list.draw()
+
     
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.D:
