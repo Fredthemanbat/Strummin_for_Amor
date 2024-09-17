@@ -65,6 +65,11 @@ class GameView(arcade.Window):
         self.tile_map = None
         self.camera = None
         self.complete = 0
+
+        self.taco_timer = 0.0 
+        self.taco_spawn_interval = 30
+        self.taco_list = arcade.SpriteList()
+        self.llama_list = arcade.SpriteList()
         
     
     def setup(self):
@@ -101,6 +106,8 @@ class GameView(arcade.Window):
         self.trumpet_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 2.wav")
         self.violin_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 3.wav")
         self.full_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Full.wav")
+        self.taco_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/Taco_song.wav")
+
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.player,
@@ -109,32 +116,30 @@ class GameView(arcade.Window):
         walls=self.scene["Platform"]
         )
 
-        for x in range(100):
-            b = random.randint(1,2)
-            if b == 1:
-                file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Flamin_Taco.png"
-            else: 
-                file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Taco.png"
-            wall = arcade.Sprite(file, 1)
-            wall.center_x = random.randint(120, 2400)
-            wall.center_y = random.randint(600, 900)
-            self.wall_list.append(wall)
-
     def on_update(self, delta_time: float):
         self.physics_engine.update()
         self.scene.update()
         self.center_camera_to_player()
+
+        self.taco_timer += delta_time
+        if self.taco_timer > self.taco_spawn_interval:
+            self.spawn_llama()
+            self.spawn_taco()
+            self.taco_timer = 0
+            
+
         coin_hit_list = arcade.check_for_collision_with_list(
             self.player, self.scene["Guitar"]
         )
         trumpet_hit = arcade.check_for_collision_with_list(self.player, self.scene["Trumpet"])
         violin_hit = arcade.check_for_collision_with_list(self.player, self.scene["Violin"])
         senorita_hit = arcade.check_for_collision_with_list(self.player, self.scene["Senorita"])
+        taco_hit = arcade.check_for_collision_with_list(self.player, self.taco_list)
 
         for coin in coin_hit_list:
             coin.remove_from_sprite_lists()
             arcade.play_sound(self.collect_coin_sound)
-            self.complete +=1
+            self.complete += 1
 
         for trumpet in trumpet_hit:
             trumpet.remove_from_sprite_lists()
@@ -146,21 +151,44 @@ class GameView(arcade.Window):
             self.violins = arcade.play_sound(self.violin_sound)
             self.complete += 1
 
+        for taco in taco_hit:
+            taco.remove_from_sprite_lists()
+            self.player.center_x = 120
+            self.player.center_y = 400
+
         if self.complete == 3:
             for senorita in senorita_hit:
                 senorita.remove_from_sprite_lists()
                 arcade.play_sound(self.full_sound)
 
-        for wall in self.wall_list:
-            wall.center_y -=random.randint(1,3)
+        for taco in self.taco_list:
+            taco.center_y -= random.randint(1, 3)
+
+    def spawn_taco(self):
+        for i in range(100):
+            taco_type = random.choice(["Flamin_Taco", "Taco"])
+            if taco_type == "Flamin_Taco":
+                file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Flamin_Taco.png"
+            else:
+                file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Taco.png"
+
+            taco = arcade.Sprite(file, 1)
+            taco.center_x = random.randint(120, 2400)
+            taco.center_y = random.randint(1000, 2000)
+
+            self.taco_list.append(taco)
+    
+    def spawn_llama(self):
+        arcade.play_sound(self.taco_sound)
+
 
     def on_draw(self):
         self.clear()
         self.camera.use()
         self.scene.draw()
         self.wall_list.draw()
+        self.taco_list.draw()
 
-    
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.D:
             self.player.change_x =  5 
@@ -194,4 +222,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
