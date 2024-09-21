@@ -1,7 +1,11 @@
 import arcade
+import arcade.gui
 from queue import Queue
 import random
 import time
+
+SCREEN_HEIGHT = 650
+SCREEN_WIDTH = 1000
 
 class Player(arcade.Sprite):
     def __init__(self):
@@ -45,14 +49,18 @@ class Violin_Cactus(arcade.Sprite):
 
 class queue_stuff():
     def __init__(self) -> None:
-        self.q = Queue()
+        self.q = []
 
     def add_to_queue(self, item):
-        return self.q.put(item= item)
+        i = item
+        return self.q.append(i)
     
     def remove_from_queue(self):
-        return self.q.get()
+        return self.q.pop()
 
+    def get_queue(self):
+        return self.q
+queue = queue_stuff()
    
 class GameView(arcade.Window):
     def __init__(self):
@@ -65,12 +73,29 @@ class GameView(arcade.Window):
         self.tile_map = None
         self.camera = None
         self.complete = 0
+        self.gui_camera = None
 
         self.taco_timer = 0.0 
         self.taco_spawn_interval = 30
         self.taco_list = arcade.SpriteList()
         self.llama_list = arcade.SpriteList()
-        
+        self.health_list = arcade.SpriteList()
+        self.manager = arcade.gui.UIManager()
+        self.manager.enable()
+
+
+        # Create a vertical BoxGroup to align buttons
+        self.v_box = arcade.gui.UIBoxLayout()
+        settings_button = arcade.gui.UIFlatButton(text="Settings", width=200)
+        self.v_box.add(settings_button.with_space_around(bottom=20))
+
+        self.manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.v_box)
+        )
+
     
     def setup(self):
         layer_options = {
@@ -78,6 +103,7 @@ class GameView(arcade.Window):
         }
 
         self.camera = arcade.Camera(1000, 650)
+        self.gui_camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.wall_list = arcade.SpriteList()
 
         self.tile_map =  arcade.load_tilemap("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Map.tmx",
@@ -115,6 +141,13 @@ class GameView(arcade.Window):
         gravity_constant=1,
         walls=self.scene["Platform"]
         )
+    
+    def show_queue(self, image, scale):
+        health = arcade.Sprite(image, scale)
+        gap_between_sprites = 70  # Set a gap between each sprite
+        health.center_x = 90 + len(self.health_list) * gap_between_sprites
+        health.center_y =  580
+        self.health_list.append(health)
 
     def on_update(self, delta_time: float):
         self.physics_engine.update()
@@ -126,7 +159,6 @@ class GameView(arcade.Window):
             self.spawn_llama()
             self.spawn_taco()
             self.taco_timer = 0
-            
 
         coin_hit_list = arcade.check_for_collision_with_list(
             self.player, self.scene["Guitar"]
@@ -138,17 +170,23 @@ class GameView(arcade.Window):
 
         for coin in coin_hit_list:
             coin.remove_from_sprite_lists()
+            queue.add_to_queue(item="Guitar")
             arcade.play_sound(self.collect_coin_sound)
+            self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Guitar_Cactus.png", 0.5)
             self.complete += 1
 
         for trumpet in trumpet_hit:
             trumpet.remove_from_sprite_lists()
+            queue.add_to_queue(item="Trupmet")
             arcade.play_sound(self.trumpet_sound)
+            self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Trumpet_Cactus.png", 0.25)
             self.complete += 1
 
         for violin in violin_hit:
             violin.remove_from_sprite_lists()
+            queue.add_to_queue(item="Violin")
             self.violins = arcade.play_sound(self.violin_sound)
+            self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Violin_cactus.png", 0.18)
             self.complete += 1
 
         for taco in taco_hit:
@@ -158,6 +196,7 @@ class GameView(arcade.Window):
 
         if self.complete == 3:
             for senorita in senorita_hit:
+                self.check_queue_order()
                 senorita.remove_from_sprite_lists()
                 arcade.play_sound(self.full_sound)
 
@@ -181,6 +220,10 @@ class GameView(arcade.Window):
     def spawn_llama(self):
         arcade.play_sound(self.taco_sound)
 
+    def check_queue_order(self):
+        self.item = queue.get_queue()
+        for i in self.item:
+            print(i)
 
     def on_draw(self):
         self.clear()
@@ -188,6 +231,10 @@ class GameView(arcade.Window):
         self.scene.draw()
         self.wall_list.draw()
         self.taco_list.draw()
+        self.gui_camera.use()
+        self.health_list.draw()
+        self.manager.draw()
+
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.D:
@@ -217,6 +264,7 @@ class GameView(arcade.Window):
 
 def main():
     window = GameView()
+    queue = queue_stuff()
     window.setup()
     arcade.run()
 
