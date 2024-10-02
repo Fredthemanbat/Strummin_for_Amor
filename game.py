@@ -20,6 +20,13 @@ class Player(arcade.Sprite):
         self.center_x = 120
         self.center_y = 400
 
+class Water(arcade.Sprite):
+    def __init__(self, center_x, center_y):
+        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Water.png")
+
+        self.center_x = center_x
+        self.center_y = center_y
+
 class Senorita_monke(arcade.Sprite):
     def __init__(self):
         super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Senorita_MONKE.png",
@@ -74,6 +81,38 @@ class queue_stuff():
             print(queue)
 
 queue = queue_stuff()
+
+class IndicatorBar:
+    def __init__(self, sprite_list):
+        border_size = 4
+        self.box_width = 200
+        self.box_height = 40
+        self.fullness= 1.0  
+
+        self.background_box = arcade.SpriteSolidColor(
+            self.box_width + border_size,
+            self.box_height + border_size,
+            arcade.color.BLACK,
+        )
+        self.full_box= arcade.SpriteSolidColor(
+            self.box_width,
+            self.box_height,
+            arcade.color.BLUE,
+        )
+
+        self.background_box.position = (self.box_width // 2 + 10, self.box_height // 2 + 10)
+        self.full_box.position = (self.box_width // 2 + 10, self.box_height // 2 + 10)
+
+        sprite_list.append(self.background_box)
+        sprite_list.append(self.full_box)
+
+    def get_fullness(self):
+        return self.fullness
+
+    def set_fullness(self, new_fullness):
+        self.fullness= new_fullness
+        self.full_box.width = self.box_width * new_fullness
+        self.full_box.left = 10
    
 class GameView(arcade.Window):
     def __init__(self):
@@ -90,25 +129,16 @@ class GameView(arcade.Window):
         self.items_order = None
 
         self.taco_timer = 0.0 
-        self.taco_spawn_interval = 10
+        self.taco_spawn_interval = 30
         self.taco_list = arcade.SpriteList()
         self.llama_list = arcade.SpriteList()
+        self.bar_list = arcade.SpriteList()
         self.health_list = arcade.SpriteList()
-        self.manager = arcade.gui.UIManager()
-        self.manager.enable()
+        self.hint_list = arcade.SpriteList()
+        self.water_list = arcade.SpriteList()
 
-
-        # Create a vertical BoxGroup to align buttons
-        self.v_box = arcade.gui.UIBoxLayout()
-        settings_button = arcade.gui.UIFlatButton(text="Settings", width=200)
-        self.v_box.add(settings_button.with_space_around(bottom=20))
-
-        self.manager.add(
-            arcade.gui.UIAnchorWidget(
-                anchor_x="center_x",
-                anchor_y="center_y",
-                child=self.v_box)
-        )
+        self.decrease_rate = 0.01
+        self.health_bar = IndicatorBar(sprite_list=self.bar_list)
 
     
     def setup(self):
@@ -142,6 +172,9 @@ class GameView(arcade.Window):
         self.violin = Violin_Cactus(scale = 0.25)
         self.scene.add_sprite("Violin", self.violin)
 
+        self.water = Water(center_x= 300, center_y= 600)
+        self.scene.add_sprite("Water", self.water)
+
         self.collect_coin_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 1.wav")
         self.trumpet_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 2.wav")
         self.violin_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 3.wav")
@@ -158,7 +191,8 @@ class GameView(arcade.Window):
 
         for item in self.items_order:
             file_path, scale = black_items[item]
-            self.show_queue(file_path, scale)
+            self.show_hint(file_path, scale)
+
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.player,
@@ -173,6 +207,13 @@ class GameView(arcade.Window):
         health.center_x = 90 + len(self.health_list) * gap_between_sprites
         health.center_y =  580
         self.health_list.append(health)
+
+    def show_hint(self, image, scale):
+        health = arcade.Sprite(image, scale)
+        gap_between_sprites = 70 
+        health.center_x = 800 + len(self.hint_list) * gap_between_sprites
+        health.center_y =  580
+        self.hint_list.append(health)
 
     def on_update(self, delta_time: float):
         self.physics_engine.update()
@@ -192,6 +233,12 @@ class GameView(arcade.Window):
         violin_hit = arcade.check_for_collision_with_list(self.player, self.scene["Violin"])
         senorita_hit = arcade.check_for_collision_with_list(self.player, self.scene["Senorita"])
         taco_hit = arcade.check_for_collision_with_list(self.player, self.taco_list)
+        water_hit = arcade.check_for_collision_with_list(self.player, self.scene["Water"])
+
+        for water in water_hit:
+            water.remove_from_sprite_lists()
+            new_fullness = self.health_bar.get_fullness() + 0.50
+            self.health_bar.set_fullness(max(0.0, new_fullness))
 
         for coin in coin_hit_list:
             coin.remove_from_sprite_lists()
@@ -202,7 +249,7 @@ class GameView(arcade.Window):
 
         for trumpet in trumpet_hit:
             trumpet.remove_from_sprite_lists()
-            queue.add_to_queue(item="Trupmet")
+            queue.add_to_queue(item="Trumpet")
             arcade.play_sound(self.trumpet_sound)
             self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Trumpet_Cactus.png", 0.25)
             self.complete += 1
@@ -216,8 +263,10 @@ class GameView(arcade.Window):
 
         for taco in taco_hit:
             taco.remove_from_sprite_lists()
+            new_fullness = self.health_bar.get_fullness() - 0.10
+            self.health_bar.set_fullness(max(0.0, new_fullness))
             self.player.center_x = 120
-            self.player.center_y = 400
+            self.player.center_y = 430
 
         if self.complete == 3:
             for senorita in senorita_hit:
@@ -228,6 +277,9 @@ class GameView(arcade.Window):
 
         for taco in self.taco_list:
             taco.center_y -= random.randint(1, 3)
+        
+        new_fullness = self.health_bar.get_fullness() - self.decrease_rate * delta_time
+        self.health_bar.set_fullness(max(0.0, new_fullness))
 
     def spawn_taco(self):
         for i in range(20):
@@ -255,8 +307,8 @@ class GameView(arcade.Window):
         self.taco_list.draw()
         self.gui_camera.use()
         self.health_list.draw()
-        self.manager.draw()
-
+        self.hint_list.draw()
+        self.bar_list.draw()
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.D:
