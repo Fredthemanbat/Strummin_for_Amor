@@ -7,6 +7,10 @@ import time
 SCREEN_HEIGHT = 650
 SCREEN_WIDTH = 1000
 
+BLACK_GUITAR = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Guitar_Cactus_Black.png"
+BLACK_TRUMPET = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Trumpet_Cactus_Black.png"
+BLACK_VIOLIN = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Violin_cactus_Black.png"
+
 class Player(arcade.Sprite):
     def __init__(self):
         super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/MONKE.png", 
@@ -15,7 +19,6 @@ class Player(arcade.Sprite):
 
         self.center_x = 120
         self.center_y = 400
-
 
 class Senorita_monke(arcade.Sprite):
     def __init__(self):
@@ -60,6 +63,16 @@ class queue_stuff():
 
     def get_queue(self):
         return self.q
+    
+    def check_order(self, queue, correct_order):
+        # for i in queue:
+        #     print(i)
+        if list(correct_order) == queue:
+            print(True)
+        else: 
+            print(correct_order)
+            print(queue)
+
 queue = queue_stuff()
    
 class GameView(arcade.Window):
@@ -74,9 +87,10 @@ class GameView(arcade.Window):
         self.camera = None
         self.complete = 0
         self.gui_camera = None
+        self.items_order = None
 
         self.taco_timer = 0.0 
-        self.taco_spawn_interval = 30
+        self.taco_spawn_interval = 10
         self.taco_list = arcade.SpriteList()
         self.llama_list = arcade.SpriteList()
         self.health_list = arcade.SpriteList()
@@ -134,6 +148,17 @@ class GameView(arcade.Window):
         self.full_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Full.wav")
         self.taco_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/Taco_song.wav")
 
+        black_items = {"Guitar": (BLACK_GUITAR, 0.5),
+                       "Violin" : (BLACK_VIOLIN, 0.18),
+                        "Trumpet" : (BLACK_TRUMPET, 0.25)
+                    }
+        items = ["Guitar", "Violin", "Trumpet"]
+        random.shuffle(items)  
+        self.items_order = items
+
+        for item in self.items_order:
+            file_path, scale = black_items[item]
+            self.show_queue(file_path, scale)
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.player,
@@ -144,7 +169,7 @@ class GameView(arcade.Window):
     
     def show_queue(self, image, scale):
         health = arcade.Sprite(image, scale)
-        gap_between_sprites = 70  # Set a gap between each sprite
+        gap_between_sprites = 70 
         health.center_x = 90 + len(self.health_list) * gap_between_sprites
         health.center_y =  580
         self.health_list.append(health)
@@ -196,7 +221,8 @@ class GameView(arcade.Window):
 
         if self.complete == 3:
             for senorita in senorita_hit:
-                self.check_queue_order()
+                self.queue = queue.get_queue()
+                queue.check_order(self.queue, self.items_order)
                 senorita.remove_from_sprite_lists()
                 arcade.play_sound(self.full_sound)
 
@@ -204,7 +230,7 @@ class GameView(arcade.Window):
             taco.center_y -= random.randint(1, 3)
 
     def spawn_taco(self):
-        for i in range(100):
+        for i in range(20):
             taco_type = random.choice(["Flamin_Taco", "Taco"])
             if taco_type == "Flamin_Taco":
                 file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Flamin_Taco.png"
@@ -212,7 +238,7 @@ class GameView(arcade.Window):
                 file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Taco.png"
 
             taco = arcade.Sprite(file, 1)
-            taco.center_x = random.randint(120, 2400)
+            taco.center_x = self.player.center_x + random.randint(-550, 550)
             taco.center_y = random.randint(1000, 2000)
 
             self.taco_list.append(taco)
@@ -220,10 +246,6 @@ class GameView(arcade.Window):
     def spawn_llama(self):
         arcade.play_sound(self.taco_sound)
 
-    def check_queue_order(self):
-        self.item = queue.get_queue()
-        for i in self.item:
-            print(i)
 
     def on_draw(self):
         self.clear()
