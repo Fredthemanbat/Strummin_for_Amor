@@ -20,6 +20,13 @@ class Player(arcade.Sprite):
         self.center_x = 120
         self.center_y = 400
 
+class Llama(arcade.Sprite):
+    def __init__(self, center_x, center_y):
+        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/llama.png", 0.1)
+
+        self.center_x = center_x
+        self.center_y = center_y
+
 class Water(arcade.Sprite):
     def __init__(self, center_x, center_y):
         super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Water.png")
@@ -82,10 +89,10 @@ class queue_stuff():
 
 queue = queue_stuff()
 
-class IndicatorBar:
+class IndicatorBar():
     def __init__(self, sprite_list):
         border_size = 4
-        self.box_width = 200
+        self.box_width = 150
         self.box_height = 40
         self.fullness= 1.0  
 
@@ -124,9 +131,9 @@ class GameView(arcade.Window):
         self.senorita = None
         self.tile_map = None
         self.camera = None
-        self.complete = 0
         self.gui_camera = None
         self.items_order = None
+        self.black_items = None
 
         self.taco_timer = 0.0 
         self.taco_spawn_interval = 30
@@ -174,6 +181,11 @@ class GameView(arcade.Window):
 
         self.water = Water(center_x= 300, center_y= 600)
         self.scene.add_sprite("Water", self.water)
+        
+        for y in range(550, 560, 10):
+            for x in range(600, 1200, 200):
+                self.llama = Llama(center_x= x, center_y= y)
+                self.scene.add_sprite("Llama", self.llama)
 
         self.collect_coin_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 1.wav")
         self.trumpet_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 2.wav")
@@ -181,18 +193,13 @@ class GameView(arcade.Window):
         self.full_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Full.wav")
         self.taco_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/Taco_song.wav")
 
-        black_items = {"Guitar": (BLACK_GUITAR, 0.5),
+        self.black_items = {"Guitar": (BLACK_GUITAR, 0.5),
                        "Violin" : (BLACK_VIOLIN, 0.18),
                         "Trumpet" : (BLACK_TRUMPET, 0.25)
                     }
         items = ["Guitar", "Violin", "Trumpet"]
         random.shuffle(items)  
         self.items_order = items
-
-        for item in self.items_order:
-            file_path, scale = black_items[item]
-            self.show_hint(file_path, scale)
-
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.player,
@@ -234,6 +241,14 @@ class GameView(arcade.Window):
         senorita_hit = arcade.check_for_collision_with_list(self.player, self.scene["Senorita"])
         taco_hit = arcade.check_for_collision_with_list(self.player, self.taco_list)
         water_hit = arcade.check_for_collision_with_list(self.player, self.scene["Water"])
+        llama_hit = arcade.check_for_collision_with_list(self.player, self.scene["Llama"])
+
+        for llama in llama_hit:
+            llama.remove_from_sprite_lists()
+            if self.items_order:
+                instrument = self.items_order.pop(0)
+                file_path, scale = self.black_items[instrument]
+                self.show_hint(file_path, scale)
 
         for water in water_hit:
             water.remove_from_sprite_lists()
@@ -245,21 +260,18 @@ class GameView(arcade.Window):
             queue.add_to_queue(item="Guitar")
             arcade.play_sound(self.collect_coin_sound)
             self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Guitar_Cactus.png", 0.5)
-            self.complete += 1
 
         for trumpet in trumpet_hit:
             trumpet.remove_from_sprite_lists()
             queue.add_to_queue(item="Trumpet")
             arcade.play_sound(self.trumpet_sound)
             self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Trumpet_Cactus.png", 0.25)
-            self.complete += 1
 
         for violin in violin_hit:
             violin.remove_from_sprite_lists()
             queue.add_to_queue(item="Violin")
             self.violins = arcade.play_sound(self.violin_sound)
             self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Violin_cactus.png", 0.18)
-            self.complete += 1
 
         for taco in taco_hit:
             taco.remove_from_sprite_lists()
@@ -268,18 +280,20 @@ class GameView(arcade.Window):
             self.player.center_x = 120
             self.player.center_y = 430
 
-        if self.complete == 3:
-            for senorita in senorita_hit:
-                self.queue = queue.get_queue()
-                queue.check_order(self.queue, self.items_order)
-                senorita.remove_from_sprite_lists()
-                arcade.play_sound(self.full_sound)
+        for senorita in senorita_hit:
+            self.queue = queue.get_queue()
+            queue.check_order(self.queue, self.items_order)
+            senorita.remove_from_sprite_lists()
+            arcade.play_sound(self.full_sound)
 
         for taco in self.taco_list:
             taco.center_y -= random.randint(1, 3)
         
         new_fullness = self.health_bar.get_fullness() - self.decrease_rate * delta_time
         self.health_bar.set_fullness(max(0.0, new_fullness))
+
+        if self.health_bar.get_fullness() <= 0:
+            self.player.center_x = 120
 
     def spawn_taco(self):
         for i in range(20):
