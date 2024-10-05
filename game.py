@@ -187,9 +187,15 @@ class GameView(arcade.Window):
                 self.llama = Llama(center_x= x, center_y= y)
                 self.scene.add_sprite("Llama", self.llama)
 
-        self.collect_coin_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 1.wav")
-        self.trumpet_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 2.wav")
-        self.violin_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 3.wav")
+        self.audio_1 = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 1.wav")
+        self.audio_2 = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 2.wav")
+        self.audio_3 = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 3.wav")
+        
+        self.parts = []
+        self.parts.append(self.audio_1)
+        self.parts.append(self.audio_2)
+        self.parts.append(self.audio_3)
+
         self.full_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Full.wav")
         self.taco_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/Taco_song.wav")
 
@@ -198,9 +204,13 @@ class GameView(arcade.Window):
                         "Trumpet" : (BLACK_TRUMPET, 0.25)
                     }
         items = ["Guitar", "Violin", "Trumpet"]
-        random.shuffle(items)  
+       
+        random.shuffle(items)
+        songs = [self.audio_1, self.audio_2, self.audio_3]
         self.items_order = items
 
+        self.item_audio = dict(zip(items, songs))
+        
         self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.player,
         platforms=self.scene["Senorita"],
@@ -221,6 +231,12 @@ class GameView(arcade.Window):
         health.center_x = 800 + len(self.hint_list) * gap_between_sprites
         health.center_y =  580
         self.hint_list.append(health)
+    
+    def play_audio(self, item):
+        keys=list(self.item_audio.keys())
+        values=list(self.item_audio.values())
+        path= values[keys.index(item)]
+        arcade.play_sound(path)
 
     def on_update(self, delta_time: float):
         self.physics_engine.update()
@@ -258,19 +274,19 @@ class GameView(arcade.Window):
         for coin in coin_hit_list:
             coin.remove_from_sprite_lists()
             queue.add_to_queue(item="Guitar")
-            arcade.play_sound(self.collect_coin_sound)
+            self.play_audio("Guitar")
             self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Guitar_Cactus.png", 0.5)
 
         for trumpet in trumpet_hit:
             trumpet.remove_from_sprite_lists()
             queue.add_to_queue(item="Trumpet")
-            arcade.play_sound(self.trumpet_sound)
+            self.play_audio("Trumpet")
             self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Trumpet_Cactus.png", 0.25)
 
         for violin in violin_hit:
             violin.remove_from_sprite_lists()
             queue.add_to_queue(item="Violin")
-            self.violins = arcade.play_sound(self.violin_sound)
+            self.play_audio("Violin")
             self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Violin_cactus.png", 0.18)
 
         for taco in taco_hit:
