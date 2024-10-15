@@ -78,14 +78,14 @@ class queue_stuff():
     def get_queue(self):
         return self.q
     
+    def clear_queue(self):
+        self.q.clear()
+    
     def check_order(self, queue, correct_order):
-        # for i in queue:
-        #     print(i)
         if list(correct_order) == queue:
-            print(True)
+            return True
         else: 
-            print(correct_order)
-            print(queue)
+            return False
 
 queue = queue_stuff()
 
@@ -182,10 +182,10 @@ class GameView(arcade.Window):
         self.water = Water(center_x= 300, center_y= 600)
         self.scene.add_sprite("Water", self.water)
         
-        for y in range(550, 560, 10):
-            for x in range(600, 1200, 200):
-                self.llama = Llama(center_x= x, center_y= y)
-                self.scene.add_sprite("Llama", self.llama)
+        # for y in range(550, 560, 10):
+        #     for x in range(600, 1200, 200):
+        #         self.llama = Llama(center_x= x, center_y= y)
+        #         self.scene.add_sprite("Llama", self.llama)
 
         self.audio_1 = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 1.wav")
         self.audio_2 = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 2.wav")
@@ -245,7 +245,6 @@ class GameView(arcade.Window):
 
         self.taco_timer += delta_time
         if self.taco_timer > self.taco_spawn_interval:
-            self.spawn_llama()
             self.spawn_taco()
             self.taco_timer = 0
 
@@ -257,14 +256,14 @@ class GameView(arcade.Window):
         senorita_hit = arcade.check_for_collision_with_list(self.player, self.scene["Senorita"])
         taco_hit = arcade.check_for_collision_with_list(self.player, self.taco_list)
         water_hit = arcade.check_for_collision_with_list(self.player, self.scene["Water"])
-        llama_hit = arcade.check_for_collision_with_list(self.player, self.scene["Llama"])
+        # llama_hit = arcade.check_for_collision_with_list(self.player, self.scene["Llama"])
 
-        for llama in llama_hit:
-            llama.remove_from_sprite_lists()
-            if self.items_order:
-                instrument = self.items_order.pop(0)
-                file_path, scale = self.black_items[instrument]
-                self.show_hint(file_path, scale)
+        # for llama in llama_hit:
+        #     llama.remove_from_sprite_lists()
+        #     if self.items_order:
+        #         instrument = self.items_order.pop(0)
+        #         file_path, scale = self.black_items[instrument]
+        #         self.show_hint(file_path, scale)
 
         for water in water_hit:
             water.remove_from_sprite_lists()
@@ -298,9 +297,21 @@ class GameView(arcade.Window):
 
         for senorita in senorita_hit:
             self.queue = queue.get_queue()
-            queue.check_order(self.queue, self.items_order)
-            senorita.remove_from_sprite_lists()
-            arcade.play_sound(self.full_sound)
+            if queue.check_order(self.queue, self.items_order) is True:
+                senorita.remove_from_sprite_lists()
+                arcade.play_sound(self.full_sound)
+            else:
+                self.health_list.clear()
+                queue.clear_queue()
+                self.guitar = Guitar_Cactus()
+                self.scene.add_sprite('Guitar', self.guitar)
+
+                self.trumpet = Trumpet_Cactus()
+                self.scene.add_sprite('Trumpet', self.trumpet)
+
+                self.violin = Violin_Cactus(scale = 0.25)
+                self.scene.add_sprite("Violin", self.violin)
+
 
         for taco in self.taco_list:
             taco.center_y -= random.randint(1, 3)
@@ -324,10 +335,6 @@ class GameView(arcade.Window):
             taco.center_y = random.randint(1000, 2000)
 
             self.taco_list.append(taco)
-    
-    def spawn_llama(self):
-        arcade.play_sound(self.taco_sound)
-
 
     def on_draw(self):
         self.clear()
@@ -337,7 +344,7 @@ class GameView(arcade.Window):
         self.taco_list.draw()
         self.gui_camera.use()
         self.health_list.draw()
-        self.hint_list.draw()
+        #self.hint_list.draw()
         self.bar_list.draw()
 
     def on_key_press(self, symbol: int, modifiers: int):
