@@ -133,6 +133,7 @@ class GameView(arcade.Window):
         self.camera = None
         self.gui_camera = None
         self.items_order = None
+        self.correct_order = None
         self.black_items = None
 
         self.taco_timer = 0.0 
@@ -194,6 +195,13 @@ class GameView(arcade.Window):
         
         self.full_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Full.wav")
         self.taco_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/Taco_song.wav")
+
+        if self.correct_order is not None:
+            self.correct_order.clear()
+            self.items_order.clear()
+            self.health_list.clear()
+            self.hint_list.clear()
+            queue.clear_queue()
 
         self.black_items = {"Guitar": (BLACK_GUITAR, 0.5),
                        "Violin" : (BLACK_VIOLIN, 0.18),
