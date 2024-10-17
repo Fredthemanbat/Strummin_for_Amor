@@ -200,14 +200,14 @@ class GameView(arcade.Window):
                         "Trumpet" : (BLACK_TRUMPET, 0.25)
                     }
         items = ["Guitar", "Violin", "Trumpet"]
-       
+
         random.shuffle(items)
         songs = [self.audio_1, self.audio_2, self.audio_3]
         self.items_order = items
-        self.correct_order = items
+        self.correct_order = items.copy()
 
         self.item_audio = dict(zip(items, songs))
-        
+
         self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.player,
         platforms=self.scene["Senorita"],
