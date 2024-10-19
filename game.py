@@ -120,10 +120,45 @@ class IndicatorBar():
         self.fullness= new_fullness
         self.full_box.width = self.box_width * new_fullness
         self.full_box.left = 10
+
+class Introduction(arcade.View):
+    def on_show_view(self):
+        """ This is run once when we switch to this view """
+        arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
+
+        # Reset the viewport, necessary if we have a scrolling game and we need
+        # to reset the viewport back to the start so we can see what we draw.
+        arcade.set_viewport(0, self.window.width, 0, self.window.height)
+    def on_draw(self):
+        """ Draw this view """
+        self.clear()
+        arcade.draw_text("Instructions Screen", self.window.width / 2, self.window.height / 2,
+                         arcade.color.WHITE, font_size=50, anchor_x="center")
+        arcade.draw_text("Click to advance", self.window.width / 2, self.window.height / 2-75,
+                         arcade.color.WHITE, font_size=20, anchor_x="center")
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        """ If the user presses the mouse button, start the game. """
+        game_view = GameView()
+        game_view.setup()
+        self.window.show_view(game_view)
+
+class GameOver(arcade.View):
+    def on_show_view(self):
+        """ This is run once when we switch to this view """
+        arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
+
+        # Reset the viewport, necessary if we have a scrolling game and we need
+        # to reset the viewport back to the start so we can see what we draw.
+        arcade.set_viewport(0, self.window.width, 0, self.window.height)
+    def on_draw(self):
+        """ Draw this view """
+        self.clear()
+        arcade.draw_text("Game Over", self.window.width / 2, self.window.height / 2,
+                         arcade.color.WHITE, font_size=50, anchor_x="center")
    
-class GameView(arcade.Window):
+class GameView(arcade.View):
     def __init__(self):
-        super().__init__(1000, 650, "Chur")
+        super().__init__()
         arcade.set_background_color(arcade.csscolor.DARK_GRAY)
 
         self.scene = None
@@ -303,7 +338,12 @@ class GameView(arcade.Window):
         for senorita in senorita_hit:
             self.queue = queue.get_queue()
 
-            if queue.check_order(self.queue, self.correct_order) is True:
+
+            if self.level == 2 and queue.check_order(self.queue, self.correct_order) is True:
+                end_view = GameOver()
+                self.window.show_view(end_view)
+                
+            elif queue.check_order(self.queue, self.correct_order) is True:
                 senorita.remove_from_sprite_lists()
                 self.level += 1
                 self.setup()
@@ -381,9 +421,9 @@ class GameView(arcade.Window):
 
 
 def main():
-    window = GameView()
-    queue = queue_stuff()
-    window.setup()
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Strummin'n for amor")
+    start_view = Introduction()
+    window.show_view(start_view)
     arcade.run()
 
 if __name__ == "__main__":
