@@ -3,17 +3,21 @@ import arcade.gui
 from queue import Queue
 import random
 import time
+import pathlib
 
 SCREEN_HEIGHT = 650
 SCREEN_WIDTH = 1000
 
-BLACK_GUITAR = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Guitar_Cactus_Black.png"
-BLACK_TRUMPET = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Trumpet_Cactus_Black.png"
-BLACK_VIOLIN = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Violin_cactus_Black.png"
+PARENT_DIR = pathlib.Path(__file__).parent
+
+BLACK_GUITAR = PARENT_DIR / "./Assets/Guitar_Cactus_Black.png"
+BLACK_TRUMPET = PARENT_DIR / "./Assets/Trumpet_Cactus_Black.png"
+BLACK_VIOLIN = PARENT_DIR / "./Assets/Violin_cactus_Black.png"
+
 
 class Player(arcade.Sprite):
     def __init__(self):
-        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/MONKE.png", 
+        super().__init__(PARENT_DIR / "./Assets/MONKE.png", 
                          0.15
                         )
 
@@ -22,21 +26,21 @@ class Player(arcade.Sprite):
 
 class Llama(arcade.Sprite):
     def __init__(self, center_x, center_y):
-        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/llama.png", 0.1)
+        super().__init__(PARENT_DIR / "./Assets/llama.png", 0.1)
 
         self.center_x = center_x
         self.center_y = center_y
 
 class Water(arcade.Sprite):
     def __init__(self, center_x, center_y):
-        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Water.png")
+        super().__init__(PARENT_DIR / "./Assets/Water.png")
 
         self.center_x = center_x
         self.center_y = center_y
 
 class Senorita_monke(arcade.Sprite):
     def __init__(self):
-        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Senorita_MONKE.png",
+        super().__init__(PARENT_DIR / "./Assets/Senorita_MONKE.png",
                          0.65
                         )
         
@@ -45,21 +49,21 @@ class Senorita_monke(arcade.Sprite):
 
 class Guitar_Cactus(arcade.Sprite):
     def __init__(self):
-        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Guitar_Cactus.png", 1)
+        super().__init__(PARENT_DIR / "./Assets/Guitar_Cactus.png", 1)
 
         self.center_x = 1500
         self.center_y = 300
 
 class Trumpet_Cactus(arcade.Sprite):
     def __init__(self):
-        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Trumpet_Cactus.png", 0.25)
+        super().__init__(PARENT_DIR / "./Assets/Trumpet_Cactus.png", 0.25)
 
         self.center_x = 2500
         self.center_y = 700
 
 class Violin_Cactus(arcade.Sprite):
     def __init__(self, scale):
-        super().__init__("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Violin_cactus.png", scale)
+        super().__init__(PARENT_DIR / "./Assets/Violin_cactus.png", scale)
 
         self.center_x = 3000
         self.center_y = 500
@@ -194,7 +198,7 @@ class GameView(arcade.View):
         self.gui_camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.wall_list = arcade.SpriteList()
 
-        self.tile_map =  arcade.load_tilemap(f"/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Map{self.level}.tmx",
+        self.tile_map =  arcade.load_tilemap(PARENT_DIR / f"./Map{self.level}.tmx",
                                              scaling=0.5,
                                              layer_options=layer_options
                                             )
@@ -224,12 +228,12 @@ class GameView(arcade.View):
                 self.llama = Llama(center_x= x, center_y= y)
                 self.scene.add_sprite("Llama", self.llama)
 
-        self.audio_1 = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 1.wav")
-        self.audio_2 = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 2.wav")
-        self.audio_3 = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Part 3.wav")
+        self.audio_1 = arcade.load_sound(PARENT_DIR / "./audio/La Bamba Part 1.wav")
+        self.audio_2 = arcade.load_sound(PARENT_DIR / "./audio/La Bamba Part 2.wav")
+        self.audio_3 = arcade.load_sound(PARENT_DIR / "./audio/La Bamba Part 3.wav")
         
-        self.full_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/La Bamba Full.wav")
-        self.taco_sound = arcade.load_sound("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/audio/Taco_song.wav")
+        self.full_sound = arcade.load_sound(PARENT_DIR / "./audio/La Bamba Full.wav")
+        self.taco_sound = arcade.load_sound(PARENT_DIR / "./audio/Taco_song.wav")
 
         if self.correct_order is not None:
             self.correct_order.clear()
@@ -314,19 +318,19 @@ class GameView(arcade.View):
             coin.remove_from_sprite_lists()
             queue.add_to_queue(item="Guitar")
             self.play_audio("Guitar")
-            self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Guitar_Cactus.png", 0.5)
+            self.show_queue(PARENT_DIR / "./Assets/Guitar_Cactus.png", 0.5)
 
         for trumpet in trumpet_hit:
             trumpet.remove_from_sprite_lists()
             queue.add_to_queue(item="Trumpet")
             self.play_audio("Trumpet")
-            self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Trumpet_Cactus.png", 0.25)
+            self.show_queue(PARENT_DIR / "./Assets/Trumpet_Cactus.png", 0.25)
 
         for violin in violin_hit:
             violin.remove_from_sprite_lists()
             queue.add_to_queue(item="Violin")
             self.play_audio("Violin")
-            self.show_queue("/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Violin_cactus.png", 0.18)
+            self.show_queue(PARENT_DIR / "./Assets/Violin_cactus.png", 0.18)
 
         for taco in taco_hit:
             taco.remove_from_sprite_lists()
@@ -373,9 +377,9 @@ class GameView(arcade.View):
         for i in range(20):
             taco_type = random.choice(["Flamin_Taco", "Taco"])
             if taco_type == "Flamin_Taco":
-                file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Flamin_Taco.png"
+                file = PARENT_DIR / "./Assets/Flamin_Taco.png"
             else:
-                file = "/Users/braedenleung/Documents/Hello World/Strummin' for Amor/Strummin_for_Amor/Assets/Taco.png"
+                file = PARENT_DIR / "./Assets/Taco.png"
 
             taco = arcade.Sprite(file, 1)
             taco.center_x = self.player.center_x + random.randint(-550, 550)
