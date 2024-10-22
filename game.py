@@ -10,71 +10,48 @@ SCREEN_WIDTH = 1000
 
 PARENT_DIR = pathlib.Path(__file__).parent
 
-BLACK_GUITAR = PARENT_DIR / "./Assets/Guitar_Cactus_Black.png"
-BLACK_TRUMPET = PARENT_DIR / "./Assets/Trumpet_Cactus_Black.png"
-BLACK_VIOLIN = PARENT_DIR / "./Assets/Violin_cactus_Black.png"
-
+ASSETS = {
+    "BLACK_GUITAR": (PARENT_DIR / "Assets/Guitar_Cactus_Black.png",0.5),
+    "BLACK_TRUMPET":(PARENT_DIR / "Assets/Trumpet_Cactus_Black.png",0.25),
+    "BLACK_VIOLIN": (PARENT_DIR / "Assets/Violin_cactus_Black.png",0.18),
+    "MONKE": PARENT_DIR / "Assets/MONKE.png",
+    "LLAMA": (PARENT_DIR / "Assets/llama.png",0.1),
+    "WATER": (PARENT_DIR / "Assets/Water.png",1),
+    "SENORITA": (PARENT_DIR / "Assets/Senorita_MONKE.png",0.65),
+    "Guitar": (PARENT_DIR / "Assets/Guitar_Cactus.png", 0.75),
+    "Trumpet": (PARENT_DIR / "Assets/Trumpet_Cactus.png",0.25),
+    "Violin": (PARENT_DIR / "Assets/Violin_cactus.png", 0.18),
+    "FLAMIN_TACO": (PARENT_DIR / "Assets/Flamin_Taco.png",1),
+    "TACO": (PARENT_DIR / "Assets/Taco.png",1),
+    "AUDIO_1": PARENT_DIR / "audio/La Bamba Part 1.wav",
+    "AUDIO_2": PARENT_DIR / "audio/La Bamba Part 2.wav",
+    "AUDIO_3": PARENT_DIR / "audio/La Bamba Part 3.wav",
+    "AUDIO_FULL": PARENT_DIR / "audio/La Bamba Full.wav",
+    "TACO_SOUND": PARENT_DIR / "audio/Taco_song.wav"
+}
 
 class Player(arcade.Sprite):
     def __init__(self):
         super().__init__(PARENT_DIR / "./Assets/MONKE.png", 
                          0.15
                         )
-
         self.center_x = 120
         self.center_y = 400
 
-class Llama(arcade.Sprite):
-    def __init__(self, center_x, center_y):
-        super().__init__(PARENT_DIR / "./Assets/llama.png", 0.1)
-
+class Sprites(arcade.Sprite):
+    def __init__(self, asset, center_x, center_y):
+        filepath, scale = asset
+        super().__init__(filepath, scale)
         self.center_x = center_x
         self.center_y = center_y
 
-class Water(arcade.Sprite):
-    def __init__(self, center_x, center_y):
-        super().__init__(PARENT_DIR / "./Assets/Water.png")
-
-        self.center_x = center_x
-        self.center_y = center_y
-
-class Senorita_monke(arcade.Sprite):
-    def __init__(self):
-        super().__init__(PARENT_DIR / "./Assets/Senorita_MONKE.png",
-                         0.65
-                        )
-        
-        self.center_x = 1000
-        self.center_y = 600
-
-class Guitar_Cactus(arcade.Sprite):
-    def __init__(self):
-        super().__init__(PARENT_DIR / "./Assets/Guitar_Cactus.png", 1)
-
-        self.center_x = 1500
-        self.center_y = 300
-
-class Trumpet_Cactus(arcade.Sprite):
-    def __init__(self):
-        super().__init__(PARENT_DIR / "./Assets/Trumpet_Cactus.png", 0.25)
-
-        self.center_x = 2500
-        self.center_y = 700
-
-class Violin_Cactus(arcade.Sprite):
-    def __init__(self, scale):
-        super().__init__(PARENT_DIR / "./Assets/Violin_cactus.png", scale)
-
-        self.center_x = 3000
-        self.center_y = 500
 
 class queue_stuff():
     def __init__(self) -> None:
         self.q = []
 
     def add_to_queue(self, item):
-        i = item
-        return self.q.append(i)
+        return self.q.append(item)
     
     def remove_from_queue(self):
         return self.q.pop()
@@ -83,7 +60,7 @@ class queue_stuff():
         return self.q
     
     def clear_queue(self):
-        self.q.clear()
+        return self.q.clear()
     
     def check_order(self, queue, correct_order):
         if list(correct_order) == queue:
@@ -141,7 +118,6 @@ class Introduction(arcade.View):
         arcade.draw_text("Click to advance", self.window.width / 2, self.window.height / 2-75,
                          arcade.color.WHITE, font_size=20, anchor_x="center")
     def on_mouse_press(self, _x, _y, _button, _modifiers):
-        """ If the user presses the mouse button, start the game. """
         game_view = GameView()
         game_view.setup()
         self.window.show_view(game_view)
@@ -176,7 +152,7 @@ class GameView(arcade.View):
         self.black_items = None
 
         self.taco_timer = 0.0 
-        self.taco_spawn_interval = 30
+        self.taco_spawn_interval = 5
         self.taco_list = arcade.SpriteList()
         self.llama_list = arcade.SpriteList()
         self.bar_list = arcade.SpriteList()
@@ -208,32 +184,32 @@ class GameView(arcade.View):
         self.player = Player()
         self.scene.add_sprite("Player", self.player)
 
-        self.senorita = Senorita_monke()
+
+        self.senorita = Sprites(ASSETS["SENORITA"],center_x=1000,center_y=600)
         self.scene.add_sprite('Senorita', self.senorita)
 
-        self.guitar = Guitar_Cactus()
+        self.guitar = Sprites(ASSETS["Guitar"], center_x=1500,center_y=300)
         self.scene.add_sprite('Guitar', self.guitar)
 
-        self.trumpet = Trumpet_Cactus()
+        self.trumpet = Sprites(ASSETS["Trumpet"],center_x=2500,center_y=700)
         self.scene.add_sprite('Trumpet', self.trumpet)
 
-        self.violin = Violin_Cactus(scale = 0.25)
+        self.violin = Sprites(ASSETS["Violin"], center_x=3000,center_y=500)
         self.scene.add_sprite("Violin", self.violin)
 
-        self.water = Water(center_x= 300, center_y= 600)
+        self.water = Sprites(ASSETS["WATER"], center_x= 300, center_y= 600)
         self.scene.add_sprite("Water", self.water)
-        
-        for y in range(550, 560, 10):
-            for x in range(600, 1200, 200):
-                self.llama = Llama(center_x= x, center_y= y)
-                self.scene.add_sprite("Llama", self.llama)
 
-        self.audio_1 = arcade.load_sound(PARENT_DIR / "./audio/La Bamba Part 1.wav")
-        self.audio_2 = arcade.load_sound(PARENT_DIR / "./audio/La Bamba Part 2.wav")
-        self.audio_3 = arcade.load_sound(PARENT_DIR / "./audio/La Bamba Part 3.wav")
+        for x in range(600, 1200, 200):
+            self.llama = Sprites(ASSETS['LLAMA'], center_x= x, center_y= 560)
+            self.scene.add_sprite("Llama", self.llama)
+
+        self.audio_1 = arcade.load_sound(ASSETS['AUDIO_1'])
+        self.audio_2 = arcade.load_sound(ASSETS['AUDIO_2'])
+        self.audio_3 = arcade.load_sound(ASSETS['AUDIO_3'])
         
-        self.full_sound = arcade.load_sound(PARENT_DIR / "./audio/La Bamba Full.wav")
-        self.taco_sound = arcade.load_sound(PARENT_DIR / "./audio/Taco_song.wav")
+        self.full_sound = arcade.load_sound(ASSETS['AUDIO_FULL'])
+        self.taco_sound = arcade.load_sound(ASSETS['TACO_SOUND'])
 
         if self.correct_order is not None:
             self.correct_order.clear()
@@ -242,10 +218,10 @@ class GameView(arcade.View):
             self.hint_list.clear()
             queue.clear_queue()
 
-        self.black_items = {"Guitar": (BLACK_GUITAR, 0.5),
-                       "Violin" : (BLACK_VIOLIN, 0.18),
-                        "Trumpet" : (BLACK_TRUMPET, 0.25)
-                    }
+        self.black_items = {"Guitar": (ASSETS["BLACK_GUITAR"]),
+                            "Violin" : (ASSETS["BLACK_VIOLIN"]),
+                            "Trumpet" : (ASSETS["BLACK_TRUMPET"])
+                            }
         items = ["Guitar", "Violin", "Trumpet"]
 
         random.shuffle(items)
@@ -262,8 +238,9 @@ class GameView(arcade.View):
         walls=self.scene["Platform"]
         )
     
-    def show_queue(self, image, scale):
-        health = arcade.Sprite(image, scale)
+    def show_queue(self, asset):
+        path, scale = asset
+        health = arcade.Sprite(path, scale)
         gap_between_sprites = 70 
         health.center_x = 90 + len(self.health_list) * gap_between_sprites
         health.center_y =  580
@@ -295,53 +272,9 @@ class GameView(arcade.View):
         coin_hit_list = arcade.check_for_collision_with_list(
             self.player, self.scene["Guitar"]
         )
-        trumpet_hit = arcade.check_for_collision_with_list(self.player, self.scene["Trumpet"])
-        violin_hit = arcade.check_for_collision_with_list(self.player, self.scene["Violin"])
-        senorita_hit = arcade.check_for_collision_with_list(self.player, self.scene["Senorita"])
-        taco_hit = arcade.check_for_collision_with_list(self.player, self.taco_list)
-        water_hit = arcade.check_for_collision_with_list(self.player, self.scene["Water"])
-        llama_hit = arcade.check_for_collision_with_list(self.player, self.scene["Llama"])
-
-        for llama in llama_hit:
-            llama.remove_from_sprite_lists()
-            if self.items_order:
-                instrument = self.items_order.pop(0)
-                file_path, scale = self.black_items[instrument]
-                self.show_hint(file_path, scale)
-
-        for water in water_hit:
-            water.remove_from_sprite_lists()
-            new_fullness = self.health_bar.get_fullness() + 0.50
-            self.health_bar.set_fullness(max(0.0, new_fullness))
-
-        for coin in coin_hit_list:
-            coin.remove_from_sprite_lists()
-            queue.add_to_queue(item="Guitar")
-            self.play_audio("Guitar")
-            self.show_queue(PARENT_DIR / "./Assets/Guitar_Cactus.png", 0.5)
-
-        for trumpet in trumpet_hit:
-            trumpet.remove_from_sprite_lists()
-            queue.add_to_queue(item="Trumpet")
-            self.play_audio("Trumpet")
-            self.show_queue(PARENT_DIR / "./Assets/Trumpet_Cactus.png", 0.25)
-
-        for violin in violin_hit:
-            violin.remove_from_sprite_lists()
-            queue.add_to_queue(item="Violin")
-            self.play_audio("Violin")
-            self.show_queue(PARENT_DIR / "./Assets/Violin_cactus.png", 0.18)
-
-        for taco in taco_hit:
-            taco.remove_from_sprite_lists()
-            new_fullness = self.health_bar.get_fullness() - 0.10
-            self.health_bar.set_fullness(max(0.0, new_fullness))
-            self.player.center_x = 120
-            self.player.center_y = 430
-
-        for senorita in senorita_hit:
+       
+        for senorita in arcade.check_for_collision_with_list(self.player, self.scene["Senorita"]):
             self.queue = queue.get_queue()
-
 
             if self.level == 2 and queue.check_order(self.queue, self.correct_order) is True:
                 end_view = GameOver()
@@ -355,13 +288,13 @@ class GameView(arcade.View):
             else:
                 self.health_list.clear()
                 queue.clear_queue()
-                self.guitar = Guitar_Cactus()
+                self.guitar = Sprites(ASSETS["GUITAR_CACTUS"], center_x=1500,center_y=300,scale=1)
                 self.scene.add_sprite('Guitar', self.guitar)
 
-                self.trumpet = Trumpet_Cactus()
+                self.trumpet = Sprites(ASSETS["TRUMPET_CACTUS"],center_x=2500,center_y=700,scale=0.25)
                 self.scene.add_sprite('Trumpet', self.trumpet)
 
-                self.violin = Violin_Cactus(scale = 0.25)
+                self.violin = Sprites(ASSETS["VIOLIN_CACTUS"], center_x=3000,center_y=500,scale=0.25)
                 self.scene.add_sprite("Violin", self.violin)
 
         for taco in self.taco_list:
@@ -372,19 +305,46 @@ class GameView(arcade.View):
 
         if self.health_bar.get_fullness() <= 0:
             self.player.center_x = 120
+    
+        self.check_collisions()
+
+
+    def check_collisions(self):
+        for sprite_name in ["Guitar", "Trumpet", "Violin"]:
+            hit_list = arcade.check_for_collision_with_list(self.player, self.scene[sprite_name])
+            for item in hit_list:
+                item.remove_from_sprite_lists()
+                queue.add_to_queue(item=sprite_name)
+                self.play_audio(sprite_name)
+                self.show_queue(ASSETS[sprite_name])
+
+        for taco in arcade.check_for_collision_with_list(self.player, self.taco_list):
+            taco.remove_from_sprite_lists()
+            new_fullness = self.health_bar.get_fullness() - 0.10
+            self.health_bar.set_fullness(max(0.0, new_fullness))
+            self.player.center_x = 120
+            self.player.center_y = 430
+
+        for llama in arcade.check_for_collision_with_list(self.player, self.scene["Llama"]):
+            llama.remove_from_sprite_lists()
+            if self.items_order:
+                instrument = self.items_order.pop(0)
+                file_path, scale = self.black_items[instrument]
+                self.show_hint(file_path, scale)
+
+        for water in arcade.check_for_collision_with_list(self.player, self.scene["Water"]):
+            water.remove_from_sprite_lists()
+            new_fullness = self.health_bar.get_fullness() + 0.50
+            self.health_bar.set_fullness(max(0.0, new_fullness))
+
 
     def spawn_taco(self):
         for i in range(20):
-            taco_type = random.choice(["Flamin_Taco", "Taco"])
-            if taco_type == "Flamin_Taco":
-                file = PARENT_DIR / "./Assets/Flamin_Taco.png"
-            else:
-                file = PARENT_DIR / "./Assets/Taco.png"
+            taco_type = random.choice(["FLAMIN_TACO", "TACO"])
 
-            taco = arcade.Sprite(file, 1)
-            taco.center_x = self.player.center_x + random.randint(-550, 550)
-            taco.center_y = random.randint(1000, 2000)
-
+            taco = Sprites(ASSETS[taco_type],
+                           center_x=self.player.center_x + random.randint(-550, 550),
+                           center_y=random.randint(1000, 2000))
             self.taco_list.append(taco)
 
     def on_draw(self):
