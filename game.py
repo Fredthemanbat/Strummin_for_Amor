@@ -7,6 +7,7 @@ import pathlib
 
 SCREEN_HEIGHT = 650
 SCREEN_WIDTH = 1000
+HEALTH_DECREASE_RATE = 0.075
 
 PARENT_DIR = pathlib.Path(__file__).parent
 
@@ -16,7 +17,6 @@ ASSETS = {
     "BLACK_VIOLIN": (PARENT_DIR / "Assets/Violin_cactus_Black.png",0.18),
     "MONKE": PARENT_DIR / "Assets/MONKE.png",
     "LLAMA": (PARENT_DIR / "Assets/llama.png",0.1),
-    "WATER": (PARENT_DIR / "Assets/Water.png",1),
     "SENORITA": (PARENT_DIR / "Assets/Senorita_MONKE.png",0.65),
     "Guitar": (PARENT_DIR / "Assets/Guitar_Cactus.png", 0.75),
     "Trumpet": (PARENT_DIR / "Assets/Trumpet_Cactus.png",0.25),
@@ -73,8 +73,8 @@ queue = queue_stuff()
 class IndicatorBar():
     def __init__(self, sprite_list):
         border_size = 4
-        self.box_width = 150
-        self.box_height = 40
+        self.box_width = 978
+        self.box_height = 30
         self.fullness= 1.0  
 
         self.background_box = arcade.SpriteSolidColor(
@@ -122,6 +122,20 @@ class Introduction(arcade.View):
         game_view.setup()
         self.window.show_view(game_view)
 
+class GameFinished(arcade.View):
+    def on_show_view(self):
+        """ This is run once when we switch to this view """
+        arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
+
+        # Reset the viewport, necessary if we have a scrolling game and we need
+        # to reset the viewport back to the start so we can see what we draw.
+        arcade.set_viewport(0, self.window.width, 0, self.window.height)
+    def on_draw(self):
+        """ Draw this view """
+        self.clear()
+        arcade.draw_text("Game Finished!", self.window.width / 2, self.window.height / 2,
+                         arcade.color.WHITE, font_size=50, anchor_x="center")
+
 class GameOver(arcade.View):
     def on_show_view(self):
         """ This is run once when we switch to this view """
@@ -135,6 +149,10 @@ class GameOver(arcade.View):
         self.clear()
         arcade.draw_text("Game Over", self.window.width / 2, self.window.height / 2,
                          arcade.color.WHITE, font_size=50, anchor_x="center")
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        game_view = GameView()
+        game_view.setup()
+        self.window.show_view(game_view)
    
 class GameView(arcade.View):
     def __init__(self):
@@ -161,7 +179,6 @@ class GameView(arcade.View):
         self.water_list = arcade.SpriteList()
         self.level = 1
 
-        self.decrease_rate = 0.01
         self.health_bar = IndicatorBar(sprite_list=self.bar_list)
 
     
@@ -196,9 +213,6 @@ class GameView(arcade.View):
 
         self.violin = Sprites(ASSETS["Violin"], center_x=3000,center_y=500)
         self.scene.add_sprite("Violin", self.violin)
-
-        self.water = Sprites(ASSETS["WATER"], center_x= 300, center_y= 600)
-        self.scene.add_sprite("Water", self.water)
 
         for x in range(600, 1200, 200):
             self.llama = Sprites(ASSETS['LLAMA'], center_x= x, center_y= 560)
@@ -277,7 +291,7 @@ class GameView(arcade.View):
             self.queue = queue.get_queue()
 
             if self.level == 2 and queue.check_order(self.queue, self.correct_order) is True:
-                end_view = GameOver()
+                end_view = GameFinished()
                 self.window.show_view(end_view)
                 
             elif queue.check_order(self.queue, self.correct_order) is True:
@@ -288,24 +302,25 @@ class GameView(arcade.View):
             else:
                 self.health_list.clear()
                 queue.clear_queue()
-                self.guitar = Sprites(ASSETS["GUITAR_CACTUS"], center_x=1500,center_y=300,scale=1)
+                self.guitar = Sprites(ASSETS['Guitar'], center_x=1500,center_y=300)
                 self.scene.add_sprite('Guitar', self.guitar)
 
-                self.trumpet = Sprites(ASSETS["TRUMPET_CACTUS"],center_x=2500,center_y=700,scale=0.25)
+                self.trumpet = Sprites(ASSETS["Trumpet"],center_x=2500,center_y=700)
                 self.scene.add_sprite('Trumpet', self.trumpet)
 
-                self.violin = Sprites(ASSETS["VIOLIN_CACTUS"], center_x=3000,center_y=500,scale=0.25)
+                self.violin = Sprites(ASSETS["Violin"], center_x=3000,center_y=500)
                 self.scene.add_sprite("Violin", self.violin)
 
         for taco in self.taco_list:
             taco.center_y -= random.randint(1, 3)
         
-        new_fullness = self.health_bar.get_fullness() - self.decrease_rate * delta_time
-        self.health_bar.set_fullness(max(0.0, new_fullness))
+        new_fullness = self.health_bar.get_fullness() - HEALTH_DECREASE_RATE * delta_time
+        self.health_bar.set_fullness(max(0.0,new_fullness))
 
-        if self.health_bar.get_fullness() <= 0:
-            self.player.center_x = 120
-    
+        if self.health_bar.get_fullness() == 0:
+            end_view = GameOver()
+            self.window.show_view(end_view)
+
         self.check_collisions()
 
 
@@ -334,9 +349,8 @@ class GameView(arcade.View):
 
         for water in arcade.check_for_collision_with_list(self.player, self.scene["Water"]):
             water.remove_from_sprite_lists()
-            new_fullness = self.health_bar.get_fullness() + 0.50
-            self.health_bar.set_fullness(max(0.0, new_fullness))
-
+            new_fullness = self.health_bar.get_fullness() + 0.5
+            self.health_bar.set_fullness(min(1.0, new_fullness)) 
 
     def spawn_taco(self):
         for i in range(20):
@@ -364,7 +378,8 @@ class GameView(arcade.View):
         elif symbol == arcade.key.A:
             self.player.change_x = - 5 
         elif symbol == arcade.key.W:
-            self.player.change_y = 15
+            if self.physics_engine.can_jump():
+                self.player.change_y = 15
 
     def on_key_release(self, symbol: int, modifiers: int):
         if symbol == arcade.key.D:
