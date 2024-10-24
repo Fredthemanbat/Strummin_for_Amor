@@ -168,6 +168,7 @@ class GameView(arcade.View):
         self.items_order = None
         self.correct_order = None
         self.black_items = None
+        self.centre_x = 0
 
         self.taco_timer = 0.0 
         self.taco_spawn_interval = 5
@@ -244,6 +245,29 @@ class GameView(arcade.View):
         self.correct_order = items.copy()
 
         self.item_audio = dict(zip(items, songs))
+ 
+        self.manager = arcade.gui.UIManager()
+        self.manager.enable()
+        
+        # Create a vertical BoxGroup to align buttons
+        default_style = {
+            "font_name": ("calibri", "arial"),
+            "font_size": 15,
+            "font_color": arcade.color.WHITE,
+            "border_width": 2,
+            "border_color": None,
+            "bg_color":  arcade.color.ORANGE_RED,
+
+            # used if button is pressed
+            "bg_color_pressed": arcade.color.GAINSBORO,
+            "border_color_pressed": arcade.color.PICTON_BLUE,  # also used when hovered
+            "font_color_pressed": arcade.color.BLACK,
+        }
+        self.v_box = arcade.gui.UIBoxLayout()
+        reset_button = arcade.gui.UIFlatButton(text="Reset", width=80, style=default_style)
+        self.v_box.add(reset_button)
+
+        reset_button.on_click = self.reset
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.player,
@@ -251,12 +275,28 @@ class GameView(arcade.View):
         gravity_constant=1,
         walls=self.scene["Platform"]
         )
-    
+
+    def reset(self, event):
+        self.health_list.clear()
+        queue.clear_queue()
+        self.centre_x -=1000
+        self.button()
+
+    def button(self):
+        self.manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="left",
+                anchor_y="top",
+                align_x= self.centre_x + 45,
+                align_y= -50,
+                child=self.v_box)
+        )
     def show_queue(self, asset):
         path, scale = asset
         health = arcade.Sprite(path, scale)
         gap_between_sprites = 70 
         health.center_x = 90 + len(self.health_list) * gap_between_sprites
+        self.centre_x = health.center_x
         health.center_y =  580
         self.health_list.append(health)
 
@@ -332,6 +372,7 @@ class GameView(arcade.View):
                 queue.add_to_queue(item=sprite_name)
                 self.play_audio(sprite_name)
                 self.show_queue(ASSETS[sprite_name])
+                self.button()
 
         for taco in arcade.check_for_collision_with_list(self.player, self.taco_list):
             taco.remove_from_sprite_lists()
@@ -371,6 +412,7 @@ class GameView(arcade.View):
         self.health_list.draw()
         self.hint_list.draw()
         self.bar_list.draw()
+        self.manager.draw()
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.D:
