@@ -196,20 +196,19 @@ class GameView(arcade.View):
                                              scaling=0.5,
                                              layer_options=layer_options
                                             )
-        
+
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
         self.player = Player()
         self.scene.add_sprite("Player", self.player)
 
-
-        self.senorita = Sprites(ASSETS["SENORITA"],center_x=1000,center_y=600)
+        self.senorita = Sprites(ASSETS["SENORITA"],center_x=3200,center_y=500)
         self.scene.add_sprite('Senorita', self.senorita)
 
-        self.guitar = Sprites(ASSETS["Guitar"], center_x=1500,center_y=300)
+        self.guitar = Sprites(ASSETS["Guitar"], center_x=1500,center_y=500)
         self.scene.add_sprite('Guitar', self.guitar)
 
-        self.trumpet = Sprites(ASSETS["Trumpet"],center_x=2500,center_y=700)
+        self.trumpet = Sprites(ASSETS["Trumpet"],center_x=2500,center_y=500)
         self.scene.add_sprite('Trumpet', self.trumpet)
 
         self.violin = Sprites(ASSETS["Violin"], center_x=3000,center_y=500)
@@ -249,7 +248,6 @@ class GameView(arcade.View):
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
         
-        # Create a vertical BoxGroup to align buttons
         default_style = {
             "font_name": ("calibri", "arial"),
             "font_size": 15,
@@ -257,12 +255,11 @@ class GameView(arcade.View):
             "border_width": 2,
             "border_color": None,
             "bg_color":  arcade.color.ORANGE_RED,
-
-            # used if button is pressed
             "bg_color_pressed": arcade.color.GAINSBORO,
-            "border_color_pressed": arcade.color.PICTON_BLUE,  # also used when hovered
+            "border_color_pressed": arcade.color.PICTON_BLUE,
             "font_color_pressed": arcade.color.BLACK,
         }
+
         self.v_box = arcade.gui.UIBoxLayout()
         reset_button = arcade.gui.UIFlatButton(text="Reset", width=80, style=default_style)
         self.v_box.add(reset_button)
@@ -279,8 +276,19 @@ class GameView(arcade.View):
     def reset(self, event):
         self.health_list.clear()
         queue.clear_queue()
+        self.respawn_cacti()
         self.centre_x -=1000
         self.button()
+
+    def respawn_cacti(self):
+        self.guitar = Sprites(ASSETS['Guitar'], center_x=1500,center_y=500)
+        self.scene.add_sprite('Guitar', self.guitar)
+
+        self.trumpet = Sprites(ASSETS["Trumpet"],center_x=2500,center_y=500)
+        self.scene.add_sprite('Trumpet', self.trumpet)
+
+        self.violin = Sprites(ASSETS["Violin"], center_x=3000,center_y=500)
+        self.scene.add_sprite("Violin", self.violin)
 
     def button(self):
         self.manager.add(
@@ -322,10 +330,6 @@ class GameView(arcade.View):
         if self.taco_timer > self.taco_spawn_interval:
             self.spawn_taco()
             self.taco_timer = 0
-
-        coin_hit_list = arcade.check_for_collision_with_list(
-            self.player, self.scene["Guitar"]
-        )
        
         for senorita in arcade.check_for_collision_with_list(self.player, self.scene["Senorita"]):
             self.queue = queue.get_queue()
@@ -342,18 +346,11 @@ class GameView(arcade.View):
             else:
                 self.health_list.clear()
                 queue.clear_queue()
-                self.guitar = Sprites(ASSETS['Guitar'], center_x=1500,center_y=300)
-                self.scene.add_sprite('Guitar', self.guitar)
-
-                self.trumpet = Sprites(ASSETS["Trumpet"],center_x=2500,center_y=700)
-                self.scene.add_sprite('Trumpet', self.trumpet)
-
-                self.violin = Sprites(ASSETS["Violin"], center_x=3000,center_y=500)
-                self.scene.add_sprite("Violin", self.violin)
+                self.respawn_cacti()
 
         for taco in self.taco_list:
             taco.center_y -= random.randint(1, 3)
-        
+
         new_fullness = self.health_bar.get_fullness() - HEALTH_DECREASE_RATE * delta_time
         self.health_bar.set_fullness(max(0.0,new_fullness))
 
@@ -362,7 +359,6 @@ class GameView(arcade.View):
             self.window.show_view(end_view)
 
         self.check_collisions()
-
 
     def check_collisions(self):
         for sprite_name in ["Guitar", "Trumpet", "Violin"]:
@@ -439,7 +435,6 @@ class GameView(arcade.View):
         if camera_y < 15:
             camera_y = 15
         self.camera.move_to((camera_x, camera_y))
-
 
 def main():
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Strummin'n for amor")
