@@ -179,6 +179,7 @@ class GameView(arcade.View):
         self.hint_list = arcade.SpriteList()
         self.water_list = arcade.SpriteList()
         self.level = 1
+        self.score= 0
 
         self.health_bar = IndicatorBar(sprite_list=self.bar_list)
 
@@ -270,7 +271,8 @@ class GameView(arcade.View):
         self.player,
         platforms=self.scene["Senorita"],
         gravity_constant=1,
-        walls=self.scene["Platform"]
+        walls=self.scene["Platform"],
+        ladders=self.scene["Ladders"]
         )
 
     def reset(self, event):
@@ -299,6 +301,7 @@ class GameView(arcade.View):
                 align_y= -50,
                 child=self.v_box)
         )
+
     def show_queue(self, asset):
         path, scale = asset
         health = arcade.Sprite(path, scale)
@@ -354,9 +357,9 @@ class GameView(arcade.View):
         new_fullness = self.health_bar.get_fullness() - HEALTH_DECREASE_RATE * delta_time
         self.health_bar.set_fullness(max(0.0,new_fullness))
 
-        if self.health_bar.get_fullness() == 0:
-            end_view = GameOver()
-            self.window.show_view(end_view)
+        # if self.health_bar.get_fullness() == 0:
+        #     end_view = GameOver()
+        #     self.window.show_view(end_view)
 
         self.check_collisions()
 
@@ -370,12 +373,12 @@ class GameView(arcade.View):
                 self.show_queue(ASSETS[sprite_name])
                 self.button()
 
-        for taco in arcade.check_for_collision_with_list(self.player, self.taco_list):
-            taco.remove_from_sprite_lists()
-            new_fullness = self.health_bar.get_fullness() - 0.10
-            self.health_bar.set_fullness(max(0.0, new_fullness))
-            self.player.center_x = 120
-            self.player.center_y = 430
+        # for taco in arcade.check_for_collision_with_list(self.player, self.taco_list):
+        #     taco.remove_from_sprite_lists()
+        #     new_fullness = self.health_bar.get_fullness() - 0.10
+        #     self.health_bar.set_fullness(max(0.0, new_fullness))
+        #     self.player.center_x = 120
+        #     self.player.center_y = 430
 
         for llama in arcade.check_for_collision_with_list(self.player, self.scene["Llama"]):
             llama.remove_from_sprite_lists()
@@ -388,6 +391,12 @@ class GameView(arcade.View):
             water.remove_from_sprite_lists()
             new_fullness = self.health_bar.get_fullness() + 0.5
             self.health_bar.set_fullness(min(1.0, new_fullness)) 
+        
+        for rose in arcade.check_for_collision_with_list(self.player, self.scene["Roses"]):
+            rose.remove_from_sprite_lists()
+            self.score += 10
+        
+
 
     def spawn_taco(self):
         for i in range(20):
@@ -404,11 +413,19 @@ class GameView(arcade.View):
         self.scene.draw()
         self.wall_list.draw()
         self.taco_list.draw()
+        self.scene['Hidden'].draw()
         self.gui_camera.use()
         self.health_list.draw()
         self.hint_list.draw()
         self.bar_list.draw()
         self.manager.draw()
+
+        arcade.draw_text(
+            f"Score: {self.score} ", 
+            50,
+            50, 
+            font_size=25
+            )
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.D:
@@ -418,6 +435,11 @@ class GameView(arcade.View):
         elif symbol == arcade.key.W:
             if self.physics_engine.can_jump():
                 self.player.change_y = 15
+            elif self.physics_engine.is_on_ladder():
+                self.player.change_y = 5
+        elif symbol == arcade.key.S:
+            if self.physics_engine.is_on_ladder():
+                self.player.change_y = -5
 
     def on_key_release(self, symbol: int, modifiers: int):
         if symbol == arcade.key.D:
