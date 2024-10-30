@@ -7,10 +7,13 @@ import pathlib
 
 SCREEN_HEIGHT = 650
 SCREEN_WIDTH = 1000
-HEALTH_DECREASE_RATE = 0.075
+HEALTH_DECREASE_RATE = 0.02
+TACO_SPAWN_INTERVAL = 20  #the time between taco spawns
 
 PARENT_DIR = pathlib.Path(__file__).parent
 
+# dictionary of all the assets
+# sprites have the scale included in a tuple
 ASSETS = {
     "BLACK_GUITAR": (PARENT_DIR / "Assets/Guitar_Cactus_Black.png",0.5),
     "BLACK_TRUMPET":(PARENT_DIR / "Assets/Trumpet_Cactus_Black.png",0.25),
@@ -39,6 +42,7 @@ class Player(arcade.Sprite):
         self.center_y = 400
 
 class Sprites(arcade.Sprite):
+    """ A function that creates the sprites"""
     def __init__(self, asset, center_x, center_y):
         filepath, scale = asset
         super().__init__(filepath, scale)
@@ -169,15 +173,15 @@ class GameView(arcade.View):
         self.correct_order = None
         self.black_items = None
         self.centre_x = 0
+        self.collected_items =[]
 
         self.taco_timer = 0.0 
-        self.taco_spawn_interval = 5
-        self.taco_list = arcade.SpriteList()
-        self.llama_list = arcade.SpriteList()
+        self.taco_list = arcade.SpriteList(use_spatial_hash=True)
+        self.llama_list = arcade.SpriteList(use_spatial_hash=True)
         self.bar_list = arcade.SpriteList()
         self.health_list = arcade.SpriteList()
         self.hint_list = arcade.SpriteList()
-        self.water_list = arcade.SpriteList()
+        self.water_list = arcade.SpriteList(use_spatial_hash=True)
         self.level = 1
         self.score= 0
 
@@ -186,7 +190,11 @@ class GameView(arcade.View):
     
     def setup(self):
         layer_options = {
-            "Platform" : {"use_spatial_hash" : True}
+            "Platform" : {"use_spatial_hash" : True},
+            "Roses" : {"use_spatial_hash" : True},
+            "Water" : {"use_spatial_hash" : True},
+            "Hidden" : {"use_spatial_hash" : True},
+            "Ladders" : {"use_spatial_hash" : True}
         }
 
         self.camera = arcade.Camera(1000, 650)
@@ -206,18 +214,14 @@ class GameView(arcade.View):
         self.senorita = Sprites(ASSETS["SENORITA"],center_x=3200,center_y=500)
         self.scene.add_sprite('Senorita', self.senorita)
 
-        self.guitar = Sprites(ASSETS["Guitar"], center_x=1500,center_y=500)
-        self.scene.add_sprite('Guitar', self.guitar)
+        self.respawn_cacti()
 
-        self.trumpet = Sprites(ASSETS["Trumpet"],center_x=2500,center_y=500)
-        self.scene.add_sprite('Trumpet', self.trumpet)
-
-        self.violin = Sprites(ASSETS["Violin"], center_x=3000,center_y=500)
-        self.scene.add_sprite("Violin", self.violin)
-
-        for x in range(600, 1200, 200):
-            self.llama = Sprites(ASSETS['LLAMA'], center_x= x, center_y= 560)
+        for sign in self.scene["Llamas"]:
+            llama_position = sign.position
+            self.llama = Sprites(ASSETS['LLAMA'], center_x=llama_position[0], center_y= llama_position[1]
+            )
             self.scene.add_sprite("Llama", self.llama)
+        self.scene.remove_sprite_list_by_name("Llamas")
 
         self.audio_1 = arcade.load_sound(ASSETS['AUDIO_1'])
         self.audio_2 = arcade.load_sound(ASSETS['AUDIO_2'])
@@ -283,14 +287,45 @@ class GameView(arcade.View):
         self.button()
 
     def respawn_cacti(self):
-        self.guitar = Sprites(ASSETS['Guitar'], center_x=1500,center_y=500)
-        self.scene.add_sprite('Guitar', self.guitar)
 
-        self.trumpet = Sprites(ASSETS["Trumpet"],center_x=2500,center_y=500)
-        self.scene.add_sprite('Trumpet', self.trumpet)
+        if not self.collected_items:
 
-        self.violin = Sprites(ASSETS["Violin"], center_x=3000,center_y=500)
-        self.scene.add_sprite("Violin", self.violin)
+            i = 0
+            for cactus in self.scene["Cactus"]:
+                cactus_position = cactus.position
+
+                if i == 0:
+                    self.guitar = Sprites(ASSETS["Guitar"], center_x=cactus_position[0], center_y=cactus_position[1])
+                    self.scene.add_sprite("Guitar", self.guitar)
+                    i +=1
+                elif i == 1:
+                    self.trumpet = Sprites(ASSETS["Trumpet"], center_x=cactus_position[0], center_y=cactus_position[1])
+                    self.scene.add_sprite("Trumpet", self.trumpet)
+                    i+=1
+                else:
+                    self.violin = Sprites(ASSETS["Violin"], center_x=cactus_position[0], center_y=cactus_position[1])
+                    self.scene.add_sprite("Violin", self.violin)
+        else:
+            for cactus in self.scene["Cactus"]:
+                print(self.collected_items)
+                cactus_position = cactus.position
+                if 'Guitar' in self.collected_items:
+                    print('guitar')
+                    print(self.collected_items)
+                    self.guitar = Sprites(ASSETS["Guitar"], center_x=cactus_position[0], center_y=cactus_position[1])
+                    self.scene.add_sprite("Guitar", self.guitar)
+                elif 'Trumpet' in self.collected_items:
+                    print('trumpet')
+                    print(self.collected_items)
+                    self.trumpet = Sprites(ASSETS["Trumpet"], center_x=cactus_position[0], center_y=cactus_position[1])
+                    self.scene.add_sprite("Trumpet", self.trumpet)
+                elif 'Violin' in self.collected_items:
+                    print('violin')
+                    print(self.collected_items)
+                    self.violin = Sprites(ASSETS["Violin"], center_x=cactus_position[0], center_y=cactus_position[1])
+                    self.scene.add_sprite("Violin", self.violin)
+        self.collected_items.clear()
+
 
     def button(self):
         self.manager.add(
@@ -330,7 +365,7 @@ class GameView(arcade.View):
         self.center_camera_to_player()
 
         self.taco_timer += delta_time
-        if self.taco_timer > self.taco_spawn_interval:
+        if self.taco_timer > TACO_SPAWN_INTERVAL:
             self.spawn_taco()
             self.taco_timer = 0
        
@@ -369,16 +404,17 @@ class GameView(arcade.View):
             for item in hit_list:
                 item.remove_from_sprite_lists()
                 queue.add_to_queue(item=sprite_name)
+                self.collected_items.append(sprite_name)
                 self.play_audio(sprite_name)
                 self.show_queue(ASSETS[sprite_name])
                 self.button()
 
-        # for taco in arcade.check_for_collision_with_list(self.player, self.taco_list):
-        #     taco.remove_from_sprite_lists()
-        #     new_fullness = self.health_bar.get_fullness() - 0.10
-        #     self.health_bar.set_fullness(max(0.0, new_fullness))
-        #     self.player.center_x = 120
-        #     self.player.center_y = 430
+        for taco in arcade.check_for_collision_with_list(self.player, self.taco_list):
+            taco.remove_from_sprite_lists()
+            new_fullness = self.health_bar.get_fullness() - 0.10
+            self.health_bar.set_fullness(max(0.0, new_fullness))
+            self.player.center_x = 120
+            self.player.center_y = 430
 
         for llama in arcade.check_for_collision_with_list(self.player, self.scene["Llama"]):
             llama.remove_from_sprite_lists()
@@ -395,8 +431,6 @@ class GameView(arcade.View):
         for rose in arcade.check_for_collision_with_list(self.player, self.scene["Roses"]):
             rose.remove_from_sprite_lists()
             self.score += 10
-        
-
 
     def spawn_taco(self):
         for i in range(20):
