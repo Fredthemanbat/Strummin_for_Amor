@@ -8,7 +8,7 @@ import pathlib
 SCREEN_HEIGHT = 650
 SCREEN_WIDTH = 1000
 HEALTH_DECREASE_RATE = 0.02
-TACO_SPAWN_INTERVAL = 20  #the time between taco spawns
+TACO_SPAWN_INTERVAL = 30  #the time between taco spawns
 
 PARENT_DIR = pathlib.Path(__file__).parent
 
@@ -172,7 +172,7 @@ class GameView(arcade.View):
         self.items_order = None
         self.correct_order = None
         self.black_items = None
-        self.centre_x = 0
+        self.button_centre_x = 0
         self.collected_items =[]
 
         self.taco_timer = 0.0 
@@ -184,10 +184,9 @@ class GameView(arcade.View):
         self.water_list = arcade.SpriteList(use_spatial_hash=True)
         self.level = 1
         self.score= 0
-
         self.health_bar = IndicatorBar(sprite_list=self.bar_list)
 
-    
+
     def setup(self):
         layer_options = {
             "Platform" : {"use_spatial_hash" : True},
@@ -211,9 +210,14 @@ class GameView(arcade.View):
         self.player = Player()
         self.scene.add_sprite("Player", self.player)
 
-        self.senorita = Sprites(ASSETS["SENORITA"],center_x=3200,center_y=500)
-        self.scene.add_sprite('Senorita', self.senorita)
 
+        for sign in self.scene["Senoritas"]:
+            senorita_position = sign.position
+            self.senorita = Sprites(ASSETS["SENORITA"],center_x=senorita_position[0],center_y=senorita_position[1])
+            self.scene.add_sprite('Senorita', self.senorita)
+        self.scene.remove_sprite_list_by_name("Senoritas")
+
+        self.collected_items.clear()
         self.respawn_cacti()
 
         for sign in self.scene["Llamas"]:
@@ -266,10 +270,10 @@ class GameView(arcade.View):
         }
 
         self.v_box = arcade.gui.UIBoxLayout()
-        reset_button = arcade.gui.UIFlatButton(text="Reset", width=80, style=default_style)
-        self.v_box.add(reset_button)
+        self.reset_button = arcade.gui.UIFlatButton(text="Reset", width=80, style=default_style)
+        self.v_box.add(self.reset_button)
 
-        reset_button.on_click = self.reset
+        self.reset_button.on_click = self.reset
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.player,
@@ -280,16 +284,15 @@ class GameView(arcade.View):
         )
 
     def reset(self, event):
+        """d"""
         self.health_list.clear()
         queue.clear_queue()
         self.respawn_cacti()
-        self.centre_x -=1000
+        self.button_centre_x -=1000
         self.button()
 
     def respawn_cacti(self):
-
         if not self.collected_items:
-
             i = 0
             for cactus in self.scene["Cactus"]:
                 cactus_position = cactus.position
@@ -297,33 +300,31 @@ class GameView(arcade.View):
                 if i == 0:
                     self.guitar = Sprites(ASSETS["Guitar"], center_x=cactus_position[0], center_y=cactus_position[1])
                     self.scene.add_sprite("Guitar", self.guitar)
+                    self.guitar_pos = cactus_position
                     i +=1
                 elif i == 1:
                     self.trumpet = Sprites(ASSETS["Trumpet"], center_x=cactus_position[0], center_y=cactus_position[1])
                     self.scene.add_sprite("Trumpet", self.trumpet)
+                    self.trumpet_pos = cactus_position
                     i+=1
                 else:
                     self.violin = Sprites(ASSETS["Violin"], center_x=cactus_position[0], center_y=cactus_position[1])
                     self.scene.add_sprite("Violin", self.violin)
+                    self.violin_pos = cactus_position
         else:
-            for cactus in self.scene["Cactus"]:
-                print(self.collected_items)
-                cactus_position = cactus.position
-                if 'Guitar' in self.collected_items:
-                    print('guitar')
-                    print(self.collected_items)
-                    self.guitar = Sprites(ASSETS["Guitar"], center_x=cactus_position[0], center_y=cactus_position[1])
+            for i in self.collected_items:
+                if i == 'Guitar':
+                    self.guitar = Sprites(ASSETS["Guitar"], center_x=self.guitar_pos[0], center_y=self.guitar_pos[1])
                     self.scene.add_sprite("Guitar", self.guitar)
-                elif 'Trumpet' in self.collected_items:
-                    print('trumpet')
-                    print(self.collected_items)
-                    self.trumpet = Sprites(ASSETS["Trumpet"], center_x=cactus_position[0], center_y=cactus_position[1])
+
+                elif i == 'Trumpet':
+                    self.trumpet = Sprites(ASSETS["Trumpet"], center_x=self.trumpet_pos[0], center_y=self.trumpet_pos[1])
                     self.scene.add_sprite("Trumpet", self.trumpet)
-                elif 'Violin' in self.collected_items:
-                    print('violin')
-                    print(self.collected_items)
-                    self.violin = Sprites(ASSETS["Violin"], center_x=cactus_position[0], center_y=cactus_position[1])
+
+                elif i == 'Violin':
+                    self.violin = Sprites(ASSETS["Violin"], center_x=self.violin_pos[0], center_y=self.violin_pos[1])
                     self.scene.add_sprite("Violin", self.violin)
+
         self.collected_items.clear()
 
 
@@ -332,7 +333,7 @@ class GameView(arcade.View):
             arcade.gui.UIAnchorWidget(
                 anchor_x="left",
                 anchor_y="top",
-                align_x= self.centre_x + 45,
+                align_x= self.button_centre_x + 45,
                 align_y= -50,
                 child=self.v_box)
         )
@@ -342,7 +343,7 @@ class GameView(arcade.View):
         health = arcade.Sprite(path, scale)
         gap_between_sprites = 70 
         health.center_x = 90 + len(self.health_list) * gap_between_sprites
-        self.centre_x = health.center_x
+        self.button_centre_x = health.center_x
         health.center_y =  580
         self.health_list.append(health)
 
@@ -384,7 +385,8 @@ class GameView(arcade.View):
             else:
                 self.health_list.clear()
                 queue.clear_queue()
-                self.respawn_cacti()
+                self.button_centre_x -= 1000
+                self.button()
 
         for taco in self.taco_list:
             taco.center_y -= random.randint(1, 3)
@@ -392,9 +394,9 @@ class GameView(arcade.View):
         new_fullness = self.health_bar.get_fullness() - HEALTH_DECREASE_RATE * delta_time
         self.health_bar.set_fullness(max(0.0,new_fullness))
 
-        # if self.health_bar.get_fullness() == 0:
-        #     end_view = GameOver()
-        #     self.window.show_view(end_view)
+        if self.health_bar.get_fullness() == 0:
+            end_view = GameOver()
+            self.window.show_view(end_view)
 
         self.check_collisions()
 

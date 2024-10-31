@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="51" height="20" tilewidth="128" tileheight="128" infinite="0" nextlayerid="8" nextobjectid="9">
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="51" height="20" tilewidth="128" tileheight="128" infinite="0" nextlayerid="9" nextobjectid="10">
  <tileset firstgid="1" source="Assets/spritesheet_ground.tsx"/>
  <tileset firstgid="129" source="Assets/Water.tsx"/>
  <tileset firstgid="130" source="Assets/Rose.tsx"/>
@@ -129,8 +129,11 @@
   <object id="5" gid="108" x="391.746" y="836.787" width="128" height="128"/>
  </objectgroup>
  <objectgroup id="7" name="Cactus">
-  <object id="6" gid="126" x="2303.1" y="1576.55" height="50.3361"/>
-  <object id="7" gid="126" x="3974.17" y="295.176" height="90.7213"/>
-  <object id="8" gid="126" x="5116.84" y="2349.34" height="50.3361"/>
+  <object id="6" gid="126" x="2431.1" y="1576.55" height="50.3361"/>
+  <object id="7" gid="126" x="4102.17" y="295.176" height="90.7213"/>
+  <object id="8" gid="126" x="5244.84" y="2349.34" height="50.3361"/>
+ </objectgroup>
+ <objectgroup id="8" name="Senoritas">
+  <object id="9" gid="117" x="6074.89" y="720.25" width="128" height="128"/>
  </objectgroup>
 </map>
