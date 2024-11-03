@@ -15,6 +15,7 @@ PARENT_DIR = pathlib.Path(__file__).parent
 # dictionary of all the assets
 # sprites have the scale included in a tuple
 ASSETS = {
+    "PLAYER" : (PARENT_DIR / "./Assets/MONKE.png", 0.15),
     "BLACK_GUITAR": (PARENT_DIR / "Assets/Guitar_Cactus_Black.png", 0.5),
     "BLACK_TRUMPET": (PARENT_DIR / "Assets/Trumpet_Cactus_Black.png", 0.25),
     "BLACK_VIOLIN": (PARENT_DIR / "Assets/Violin_cactus_Black.png", 0.18),
@@ -34,11 +35,7 @@ ASSETS = {
 }
 
 
-class Player(arcade.Sprite):
-    def __init__(self):
-        super().__init__(PARENT_DIR / "./Assets/MONKE.png", 0.15)
-        self.center_x = 120
-        self.center_y = 400
+
 
 
 class Sprites(arcade.Sprite):
@@ -246,7 +243,7 @@ class GameView(arcade.View):
 
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
-        self.player = Player()
+        self.player = Sprites(ASSETS['PLAYER'], center_x=120, center_y=400)
         self.scene.add_sprite("Player", self.player)
 
         for sign in self.scene["Senoritas"]:
@@ -457,6 +454,7 @@ class GameView(arcade.View):
             elif queue.check_order(self.queue, self.correct_order) is True:
                 senorita.remove_from_sprite_lists()
                 self.level += 1
+                self.taco_timer = 0
                 self.setup()
                 # arcade.play_sound(self.full_sound)
             else:
