@@ -1,13 +1,11 @@
+import random
+import pathlib
 import arcade
 import arcade.gui
-from queue import Queue
-import random
-import time
-import pathlib
 
 SCREEN_HEIGHT = 650
 SCREEN_WIDTH = 1000
-HEALTH_DECREASE_RATE = 0.02
+HEALTH_DECREASE_RATE = 0.02  # speed at which health decreases
 TACO_SPAWN_INTERVAL = 30  # the time between taco spawns
 
 PARENT_DIR = pathlib.Path(__file__).parent
@@ -15,7 +13,7 @@ PARENT_DIR = pathlib.Path(__file__).parent
 # dictionary of all the assets
 # sprites have the scale included in a tuple
 ASSETS = {
-    "PLAYER" : (PARENT_DIR / "./Assets/MONKE.png", 0.15),
+    "PLAYER": (PARENT_DIR / "./Assets/MONKE.png", 0.15),
     "BLACK_GUITAR": (PARENT_DIR / "Assets/Guitar_Cactus_Black.png", 0.5),
     "BLACK_TRUMPET": (PARENT_DIR / "Assets/Trumpet_Cactus_Black.png", 0.25),
     "BLACK_VIOLIN": (PARENT_DIR / "Assets/Violin_cactus_Black.png", 0.18),
@@ -31,51 +29,56 @@ ASSETS = {
     "AUDIO_2": PARENT_DIR / "audio/La Bamba Part 2.wav",
     "AUDIO_3": PARENT_DIR / "audio/La Bamba Part 3.wav",
     "AUDIO_FULL": PARENT_DIR / "audio/La Bamba Full.wav",
-    "TACO_SOUND": PARENT_DIR / "audio/Taco_song.wav",
 }
-
-
-
 
 
 class Sprites(arcade.Sprite):
     """A function that creates the sprites"""
-
     def __init__(self, asset, center_x, center_y):
-        filepath, scale = asset
+        filepath, scale = asset  # seperates the values in the tuple
         super().__init__(filepath, scale)
         self.center_x = center_x
         self.center_y = center_y
 
 
-class queue_stuff:
+class QueueStuff():
     def __init__(self) -> None:
+        """Sets up the queue"""
         self.q = []
 
     def add_to_queue(self, item):
+        """Ends the item to the end of the queue and returns the new one"""
         return self.q.append(item)
 
     def remove_from_queue(self):
+        """Returns the queue with the first item removed"""
         return self.q.pop()
 
     def get_queue(self):
+        """Returns the full queue"""
         return self.q
 
     def clear_queue(self):
+        """Clears the queue"""
         return self.q.clear()
 
     def check_order(self, queue, correct_order):
+        """Checks the order of the queue against the correct order list"""
         if list(correct_order) == queue:
             return True
         else:
             return False
 
 
-queue = queue_stuff()
-
+# creates a queue instance
+queue = QueueStuff()
 
 class IndicatorBar:
     def __init__(self, sprite_list):
+        """
+        Sets up the outline rectangle
+        and the blue inner rectangle that represents the health
+        """
         border_size = 4
         self.box_width = 978
         self.box_height = 30
@@ -91,7 +94,6 @@ class IndicatorBar:
             self.box_height,
             arcade.color.BLUE,
         )
-
         self.background_box.position = (
             self.box_width // 2 + 10,
             self.box_height // 2 + 10,
@@ -102,60 +104,73 @@ class IndicatorBar:
         sprite_list.append(self.full_box)
 
     def get_fullness(self):
+        """Returns the current fullness of the health bar"""
         return self.fullness
 
     def set_fullness(self, new_fullness):
+        """Sets the new fullness for the health bar"""
         self.fullness = new_fullness
         self.full_box.width = self.box_width * new_fullness
+
+        # anchors the health bar to the left of the screen
+        # so that it only decreases from the right
         self.full_box.left = 10
 
 
 class Introduction(arcade.View):
     def on_show_view(self):
-        """This is run once when we switch to this view"""
+        """Sets up the 'Introduction' view"""
         arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
 
-        # Reset the viewport, necessary if we have a scrolling game and we need
-        # to reset the viewport back to the start so we can see what we draw.
-        arcade.set_viewport(0, self.window.width, 0, self.window.height)
-
     def on_draw(self):
-        """Draw this view"""
+        """Draws the instructions"""
         self.clear()
         arcade.draw_text(
-            "Instructions Screen",
+            "Welcome!",
             self.window.width / 2,
-            self.window.height / 2,
+            self.window.height / 2 + 25,
             arcade.color.WHITE,
             font_size=50,
             anchor_x="center",
         )
         arcade.draw_text(
+            "Collect the cacti in the right order to impress your Senorita. Watch out though as falling foes and dehydration try to stop you. Use the WASD keys to move. ",
+            self.window.width / 2,
+            self.window.height / 2 - 25,
+            arcade.color.WHITE,
+            multiline=True,
+            width=700,
+            font_size=20,
+            anchor_x="center",
+        )
+        arcade.draw_text(
             "Click to advance",
             self.window.width / 2,
-            self.window.height / 2 - 75,
-            arcade.color.WHITE,
+            self.window.height / 2 - 130,
+            arcade.color.REDWOOD,
             font_size=20,
             anchor_x="center",
         )
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
+        """Sets up the game when the window is clicked"""
         game_view = GameView()
         game_view.setup()
         self.window.show_view(game_view)
 
 
 class GameFinished(arcade.View):
+    """Thic class handles the game over view"""
+    def __init__(self, score):
+        super().__init__()
+        self.score = score
+
     def on_show_view(self):
-        """This is run once when we switch to this view"""
+        """Sets up th view for the 'Game Finsished' screen"""
         arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
 
-        # Reset the viewport, necessary if we have a scrolling game and we need
-        # to reset the viewport back to the start so we can see what we draw.
-        arcade.set_viewport(0, self.window.width, 0, self.window.height)
-
     def on_draw(self):
-        """Draw this view"""
+        """Draws the text"""
         self.clear()
         arcade.draw_text(
             "Game Finished!",
@@ -165,19 +180,31 @@ class GameFinished(arcade.View):
             font_size=50,
             anchor_x="center",
         )
+        arcade.draw_text(
+            f"Score: {self.score}",
+            self.window.width / 2,
+            self.window.height / 2 - 45,
+            arcade.color.WHITE,
+            font_size=15,
+            anchor_x="center",
+        )
+        arcade.draw_text(
+            f"Made by Braeden",
+            self.window.width / 2,
+            self.window.height / 2 - 100,
+            arcade.color.WHITE,
+            font_size=15,
+            anchor_x="center",
+        )
 
 
 class GameOver(arcade.View):
     def on_show_view(self):
-        """This is run once when we switch to this view"""
+        """Sets up the 'Game Over' view"""
         arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
 
-        # Reset the viewport, necessary if we have a scrolling game and we need
-        # to reset the viewport back to the start so we can see what we draw.
-        arcade.set_viewport(0, self.window.width, 0, self.window.height)
-
     def on_draw(self):
-        """Draw this view"""
+        """Draws the view"""
         self.clear()
         arcade.draw_text(
             "Game Over",
@@ -189,6 +216,7 @@ class GameOver(arcade.View):
         )
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
+        """Restarts the game when the screen is clicked"""
         game_view = GameView()
         game_view.setup()
         self.window.show_view(game_view)
@@ -207,15 +235,16 @@ class GameView(arcade.View):
         self.gui_camera = None
         self.items_order = None
         self.correct_order = None
+        self.current_sound = None
         self.black_items = None
-        self.button_centre_x = 0
+        self.button_centre_x = 0  # x location of the Reset button
         self.collected_items = []
 
         self.taco_timer = 0.0
         self.taco_list = arcade.SpriteList(use_spatial_hash=True)
         self.llama_list = arcade.SpriteList(use_spatial_hash=True)
         self.bar_list = arcade.SpriteList()
-        self.health_list = arcade.SpriteList()
+        self.display_queue = arcade.SpriteList()
         self.hint_list = arcade.SpriteList()
         self.water_list = arcade.SpriteList(use_spatial_hash=True)
         self.level = 1
@@ -243,43 +272,45 @@ class GameView(arcade.View):
 
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
-        self.player = Sprites(ASSETS['PLAYER'], center_x=120, center_y=400)
+        self.player = Sprites(ASSETS["PLAYER"], center_x=120, center_y=400)
         self.scene.add_sprite("Player", self.player)
 
+        # takes the specified layers on the map and replaces them with the respective sprites
+        # coordinates of sprite as specified on the map
         for sign in self.scene["Senoritas"]:
             senorita_position = sign.position
             self.senorita = Sprites(
                 ASSETS["SENORITA"],
                 center_x=senorita_position[0],
-                center_y=senorita_position[1]
+                center_y=senorita_position[1],
             )
             self.scene.add_sprite("Senorita", self.senorita)
         self.scene.remove_sprite_list_by_name("Senoritas")
 
-        self.collected_items.clear()
-        self.respawn_cacti()
-
         for sign in self.scene["Llamas"]:
             llama_position = sign.position
             self.llama = Sprites(
-                ASSETS["LLAMA"],
-                center_x=llama_position[0],
-                center_y=llama_position[1]
+                ASSETS["LLAMA"], center_x=llama_position[0], center_y=llama_position[1]
             )
             self.scene.add_sprite("Llama", self.llama)
         self.scene.remove_sprite_list_by_name("Llamas")
 
+        # list of collected items cleared when game reset
+        self.collected_items.clear()
+        # spawns in the cacti
+        self.respawn_cacti()
+
+        # loads in all the audio
         self.audio_1 = arcade.load_sound(ASSETS["AUDIO_1"])
         self.audio_2 = arcade.load_sound(ASSETS["AUDIO_2"])
         self.audio_3 = arcade.load_sound(ASSETS["AUDIO_3"])
-
         self.full_sound = arcade.load_sound(ASSETS["AUDIO_FULL"])
-        self.taco_sound = arcade.load_sound(ASSETS["TACO_SOUND"])
 
+        # if items have been collected, reset them when moving to the next level
         if self.correct_order is not None:
             self.correct_order.clear()
             self.items_order.clear()
-            self.health_list.clear()
+            self.display_queue.clear()
             self.hint_list.clear()
             queue.clear_queue()
 
@@ -295,11 +326,13 @@ class GameView(arcade.View):
         self.items_order = items
         self.correct_order = items.copy()
 
+        # creates a dictionary of items with their respective songs
         self.item_audio = dict(zip(items, songs))
 
+        # creates a manager for the reset button
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
-
+        # the style for the reset button
         default_style = {
             "font_name": ("calibri", "arial"),
             "font_size": 15,
@@ -311,7 +344,7 @@ class GameView(arcade.View):
             "border_color_pressed": arcade.color.PICTON_BLUE,
             "font_color_pressed": arcade.color.BLACK,
         }
-
+        # sets up the reset button
         self.v_box = arcade.gui.UIBoxLayout()
         self.reset_button = arcade.gui.UIFlatButton(
             text="Reset", width=80, style=default_style
@@ -320,6 +353,7 @@ class GameView(arcade.View):
 
         self.reset_button.on_click = self.reset
 
+        # The physics engine
         self.physics_engine = arcade.PhysicsEnginePlatformer(
             self.player,
             platforms=self.scene["Senorita"],
@@ -329,14 +363,23 @@ class GameView(arcade.View):
         )
 
     def reset(self, event):
-        """d"""
-        self.health_list.clear()
+        """
+        Called when the rest button is pressed
+        Resets the queue
+        """
+        self.display_queue.clear()
         queue.clear_queue()
         self.respawn_cacti()
+        if self.current_sound:
+            arcade.stop_sound(self.current_sound)
         self.button_centre_x -= 1000
         self.button()
 
     def respawn_cacti(self):
+        """
+        Spawns in the cacti
+        Stores the location of each cacti in order to respawn in the correct place
+        """
         if not self.collected_items:
             i = 0
             for cactus in self.scene["Cactus"]:
@@ -394,9 +437,11 @@ class GameView(arcade.View):
                     )
                     self.scene.add_sprite("Violin", self.violin)
 
+        # resets collect items as the queue is not cleared
         self.collected_items.clear()
 
     def button(self):
+        """Adds the button to the button manager"""
         self.manager.add(
             arcade.gui.UIAnchorWidget(
                 anchor_x="left",
@@ -408,28 +453,40 @@ class GameView(arcade.View):
         )
 
     def show_queue(self, asset):
+        """Shows the item that the player has collected in the order collected"""
         path, scale = asset
         health = arcade.Sprite(path, scale)
         gap_between_sprites = 70
-        health.center_x = 90 + len(self.health_list) * gap_between_sprites
+        health.center_x = 90 + len(self.display_queue) * gap_between_sprites
         self.button_centre_x = health.center_x
         health.center_y = 580
-        self.health_list.append(health)
+        self.display_queue.append(health)
 
     def show_hint(self, image, scale):
+        """Shows a hint of the correct order"""
         health = arcade.Sprite(image, scale)
         gap_between_sprites = 70
         health.center_x = 800 + len(self.hint_list) * gap_between_sprites
         health.center_y = 580
         self.hint_list.append(health)
 
+
     def play_audio(self, item):
+        """Play the correct audio for the collected item, stopping any currently playing audio."""
+        # Stop the current sound if it is playing
+        if self.current_sound:
+            arcade.stop_sound(self.current_sound)
+        
+        # Get the new sound to play
         keys = list(self.item_audio.keys())
         values = list(self.item_audio.values())
         path = values[keys.index(item)]
-        arcade.play_sound(path)
+        
+        # Play the new sound and update the current sound tracker
+        self.current_sound = arcade.play_sound(path)
 
     def on_update(self, delta_time: float):
+        """Updates everything"""
         self.physics_engine.update()
         self.scene.update()
         self.center_camera_to_player()
@@ -438,30 +495,6 @@ class GameView(arcade.View):
         if self.taco_timer > TACO_SPAWN_INTERVAL:
             self.spawn_taco()
             self.taco_timer = 0
-
-        for senorita in arcade.check_for_collision_with_list(
-            self.player, self.scene["Senorita"]
-        ):
-            self.queue = queue.get_queue()
-
-            if (
-                self.level == 2
-                and queue.check_order(self.queue, self.correct_order) is True
-            ):
-                end_view = GameFinished()
-                self.window.show_view(end_view)
-
-            elif queue.check_order(self.queue, self.correct_order) is True:
-                senorita.remove_from_sprite_lists()
-                self.level += 1
-                self.taco_timer = 0
-                self.setup()
-                # arcade.play_sound(self.full_sound)
-            else:
-                self.health_list.clear()
-                queue.clear_queue()
-                self.button_centre_x -= 1000
-                self.button()
 
         for taco in self.taco_list:
             taco.center_y -= random.randint(1, 3)
@@ -472,12 +505,14 @@ class GameView(arcade.View):
         self.health_bar.set_fullness(max(0.0, new_fullness))
 
         if self.health_bar.get_fullness() == 0:
+            self.level = 1
             end_view = GameOver()
             self.window.show_view(end_view)
 
         self.check_collisions()
 
     def check_collisions(self):
+        """Check for collisions between player and sprite"""
         for sprite_name in ["Guitar", "Trumpet", "Violin"]:
             hit_list = arcade.check_for_collision_with_list(
                 self.player, self.scene[sprite_name]
@@ -519,10 +554,36 @@ class GameView(arcade.View):
             rose.remove_from_sprite_lists()
             self.score += 10
 
+        for senorita in arcade.check_for_collision_with_list(
+            self.player, self.scene["Senorita"]
+        ):
+            self.queue = queue.get_queue()
+
+            if (
+                self.level == 2
+                and queue.check_order(self.queue, self.correct_order) is True
+            ):
+                end_view = GameFinished(score=self.score)
+                self.window.show_view(end_view)
+                if self.current_sound:
+                    arcade.stop_sound(self.current_sound)
+                arcade.play_sound(self.full_sound)
+
+            elif queue.check_order(self.queue, self.correct_order) is True:
+                senorita.remove_from_sprite_lists()
+                self.level += 1
+                self.taco_timer = 0
+                self.setup()
+            else:
+                self.display_queue.clear()
+                queue.clear_queue()
+                self.button_centre_x -= 1000
+                self.button()
+
     def spawn_taco(self):
+        """Spawns in 20 tacos over the player"""
         for i in range(20):
             taco_type = random.choice(["FLAMIN_TACO", "TACO"])
-
             taco = Sprites(
                 ASSETS[taco_type],
                 center_x=self.player.center_x + random.randint(-550, 550),
@@ -531,14 +592,15 @@ class GameView(arcade.View):
             self.taco_list.append(taco)
 
     def on_draw(self):
+        """Draws everything"""
         self.clear()
         self.camera.use()
         self.scene.draw()
         self.wall_list.draw()
-        self.taco_list.draw()
         self.scene["Hidden"].draw()
+        self.taco_list.draw()
         self.gui_camera.use()
-        self.health_list.draw()
+        self.display_queue.draw()
         self.hint_list.draw()
         self.bar_list.draw()
         self.manager.draw()
