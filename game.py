@@ -14,9 +14,6 @@ PARENT_DIR = pathlib.Path(__file__).parent
 # sprites have the scale included in a tuple
 ASSETS = {
     "PLAYER": (PARENT_DIR / "./Assets/MONKE.png", 0.15),
-    "BLACK_GUITAR": (PARENT_DIR / "Assets/Guitar_Cactus_Black.png", 0.5),
-    "BLACK_TRUMPET": (PARENT_DIR / "Assets/Trumpet_Cactus_Black.png", 0.25),
-    "BLACK_VIOLIN": (PARENT_DIR / "Assets/Violin_cactus_Black.png", 0.18),
     "MONKE": PARENT_DIR / "Assets/MONKE.png",
     "LLAMA": (PARENT_DIR / "Assets/llama.png", 0.1),
     "SENORITA": (PARENT_DIR / "Assets/Senorita_MONKE.png", 0.65),
@@ -236,22 +233,26 @@ class GameView(arcade.View):
         self.items_order = None
         self.correct_order = None
         self.current_sound = None
-        self.black_items = None
         self.button_centre_x = 0  # x location of the Reset button
         self.collected_items = []
-
-        self.taco_timer = 0.0
+        self.level = 1 
+        self.score = 0
+        self.taco_timer = 0.0 # time since last taco drop
+        
+        # Sprite lists
         self.taco_list = arcade.SpriteList(use_spatial_hash=True)
         self.llama_list = arcade.SpriteList(use_spatial_hash=True)
+        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         self.bar_list = arcade.SpriteList()
         self.display_queue = arcade.SpriteList()
         self.hint_list = arcade.SpriteList()
         self.water_list = arcade.SpriteList(use_spatial_hash=True)
-        self.level = 1
-        self.score = 0
         self.health_bar = IndicatorBar(sprite_list=self.bar_list)
 
     def setup(self):
+        """Sets up the main game logic"""
+
+        # Loads in the Tiled Map
         layer_options = {
             "Platform": {"use_spatial_hash": True},
             "Roses": {"use_spatial_hash": True},
@@ -260,23 +261,25 @@ class GameView(arcade.View):
             "Ladders": {"use_spatial_hash": True},
         }
 
-        self.camera = arcade.Camera(1000, 650)
-        self.gui_camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-        self.wall_list = arcade.SpriteList()
-
         self.tile_map = arcade.load_tilemap(
             PARENT_DIR / f"./Map{self.level}.tmx",
             scaling=0.5,
             layer_options=layer_options,
         )
-
+        # sets up the scene with the correct level
+        # Sprites will be added to the scene for simplicity
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
+        self.camera = arcade.Camera(1000, 650)
+        self.gui_camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        # PLAYER
         self.player = Sprites(ASSETS["PLAYER"], center_x=120, center_y=400)
         self.scene.add_sprite("Player", self.player)
 
         # takes the specified layers on the map and replaces them with the respective sprites
         # coordinates of sprite as specified on the map
+        # Spawn in Senorita
         for sign in self.scene["Senoritas"]:
             senorita_position = sign.position
             self.senorita = Sprites(
@@ -287,6 +290,7 @@ class GameView(arcade.View):
             self.scene.add_sprite("Senorita", self.senorita)
         self.scene.remove_sprite_list_by_name("Senoritas")
 
+        # Spawns in the Llamas
         for sign in self.scene["Llamas"]:
             llama_position = sign.position
             self.llama = Sprites(
@@ -296,9 +300,10 @@ class GameView(arcade.View):
         self.scene.remove_sprite_list_by_name("Llamas")
 
         # list of collected items cleared when game reset
+        # make sure it's empty
         self.collected_items.clear()
         # spawns in the cacti
-        self.respawn_cacti()
+        self.spawn_cacti()
 
         # loads in all the audio
         self.audio_1 = arcade.load_sound(ASSETS["AUDIO_1"])
@@ -314,18 +319,12 @@ class GameView(arcade.View):
             self.hint_list.clear()
             queue.clear_queue()
 
-        self.black_items = {
-            "Guitar": (ASSETS["BLACK_GUITAR"]),
-            "Violin": (ASSETS["BLACK_VIOLIN"]),
-            "Trumpet": (ASSETS["BLACK_TRUMPET"]),
-        }
+        # Randomly shuffles the cacti and creates the correct order
         items = ["Guitar", "Violin", "Trumpet"]
-
         random.shuffle(items)
         songs = [self.audio_1, self.audio_2, self.audio_3]
         self.items_order = items
         self.correct_order = items.copy()
-
         # creates a dictionary of items with their respective songs
         self.item_audio = dict(zip(items, songs))
 
@@ -375,67 +374,68 @@ class GameView(arcade.View):
         self.button_centre_x -= 1000
         self.button()
 
+    def spawn_cacti(self):
+        """Spawns the cacti in the fisrt time"""
+        i = 0
+        for cactus in self.scene["Cactus"]:
+            cactus_position = cactus.position
+            if i == 0:
+                self.guitar = Sprites(
+                    ASSETS["Guitar"],
+                    center_x=cactus_position[0],
+                    center_y=cactus_position[1],
+                )
+                self.scene.add_sprite("Guitar", self.guitar)
+                self.guitar_pos = cactus_position
+                i += 1
+            elif i == 1:
+                self.trumpet = Sprites(
+                    ASSETS["Trumpet"],
+                    center_x=cactus_position[0],
+                    center_y=cactus_position[1],
+                )
+                self.scene.add_sprite("Trumpet", self.trumpet)
+                self.trumpet_pos = cactus_position
+                i += 1
+            else:
+                self.violin = Sprites(
+                    ASSETS["Violin"],
+                    center_x=cactus_position[0],
+                    center_y=cactus_position[1],
+                )
+                self.scene.add_sprite("Violin", self.violin)
+                self.violin_pos = cactus_position
+
     def respawn_cacti(self):
         """
-        Spawns in the cacti
+        Respawns in the cacti
         Stores the location of each cacti in order to respawn in the correct place
         """
-        if not self.collected_items:
-            i = 0
-            for cactus in self.scene["Cactus"]:
-                cactus_position = cactus.position
+        for i in self.collected_items:
+            if i == "Guitar":
+                self.guitar = Sprites(
+                    ASSETS["Guitar"],
+                    center_x=self.guitar_pos[0],
+                    center_y=self.guitar_pos[1],
+                )
+                self.scene.add_sprite("Guitar", self.guitar)
 
-                if i == 0:
-                    self.guitar = Sprites(
-                        ASSETS["Guitar"],
-                        center_x=cactus_position[0],
-                        center_y=cactus_position[1],
-                    )
-                    self.scene.add_sprite("Guitar", self.guitar)
-                    self.guitar_pos = cactus_position
-                    i += 1
-                elif i == 1:
-                    self.trumpet = Sprites(
-                        ASSETS["Trumpet"],
-                        center_x=cactus_position[0],
-                        center_y=cactus_position[1],
-                    )
-                    self.scene.add_sprite("Trumpet", self.trumpet)
-                    self.trumpet_pos = cactus_position
-                    i += 1
-                else:
-                    self.violin = Sprites(
-                        ASSETS["Violin"],
-                        center_x=cactus_position[0],
-                        center_y=cactus_position[1],
-                    )
-                    self.scene.add_sprite("Violin", self.violin)
-                    self.violin_pos = cactus_position
-        else:
-            for i in self.collected_items:
-                if i == "Guitar":
-                    self.guitar = Sprites(
-                        ASSETS["Guitar"],
-                        center_x=self.guitar_pos[0],
-                        center_y=self.guitar_pos[1],
-                    )
-                    self.scene.add_sprite("Guitar", self.guitar)
+            elif i == "Trumpet":
+                print("here")
+                self.trumpet = Sprites(
+                    ASSETS["Trumpet"],
+                    center_x=self.trumpet_pos[0],
+                    center_y=self.trumpet_pos[1],
+                )
+                self.scene.add_sprite("Trumpet", self.trumpet)
 
-                elif i == "Trumpet":
-                    self.trumpet = Sprites(
-                        ASSETS["Trumpet"],
-                        center_x=self.trumpet_pos[0],
-                        center_y=self.trumpet_pos[1],
-                    )
-                    self.scene.add_sprite("Trumpet", self.trumpet)
-
-                elif i == "Violin":
-                    self.violin = Sprites(
-                        ASSETS["Violin"],
-                        center_x=self.violin_pos[0],
-                        center_y=self.violin_pos[1],
-                    )
-                    self.scene.add_sprite("Violin", self.violin)
+            elif i == "Violin":
+                self.violin = Sprites(
+                    ASSETS["Violin"],
+                    center_x=self.violin_pos[0],
+                    center_y=self.violin_pos[1],
+                )
+                self.scene.add_sprite("Violin", self.violin)
 
         # resets collect items as the queue is not cleared
         self.collected_items.clear()
@@ -464,12 +464,14 @@ class GameView(arcade.View):
 
     def show_hint(self, image, scale):
         """Shows a hint of the correct order"""
-        health = arcade.Sprite(image, scale)
+        # creates the hint sprite
+        # takes the file path adn converts it into string inorder to have the colour changed
+        health = arcade.Sprite(str(image), scale)
+        health.color = arcade.csscolor.BLACK # Converts the sprite into a black silhouette
         gap_between_sprites = 70
         health.center_x = 800 + len(self.hint_list) * gap_between_sprites
         health.center_y = 580
         self.hint_list.append(health)
-
 
     def play_audio(self, item):
         """Play the correct audio for the collected item, stopping any currently playing audio."""
@@ -478,6 +480,7 @@ class GameView(arcade.View):
             arcade.stop_sound(self.current_sound)
         
         # Get the new sound to play
+        # Index the dicitonary to find the correct audio
         keys = list(self.item_audio.keys())
         values = list(self.item_audio.values())
         path = values[keys.index(item)]
@@ -491,19 +494,25 @@ class GameView(arcade.View):
         self.scene.update()
         self.center_camera_to_player()
 
+        # spawns in the tacos after the spawn interval has passed
         self.taco_timer += delta_time
         if self.taco_timer > TACO_SPAWN_INTERVAL:
             self.spawn_taco()
+            # reset the timer between drops
             self.taco_timer = 0
 
+        # move the tacos down at different speeds
         for taco in self.taco_list:
-            taco.center_y -= random.randint(1, 3)
+            taco.center_y -= random.randint(1, 4)
 
+        # decrease the health bar by the decrease rate and the time which has passed
         new_fullness = (
             self.health_bar.get_fullness() - HEALTH_DECREASE_RATE * delta_time
         )
         self.health_bar.set_fullness(max(0.0, new_fullness))
 
+        # if the health bar has reached 0
+        # player is reset to level 1 and game is finished
         if self.health_bar.get_fullness() == 0:
             self.level = 1
             end_view = GameOver()
@@ -519,16 +528,18 @@ class GameView(arcade.View):
             )
             for item in hit_list:
                 item.remove_from_sprite_lists()
-                queue.add_to_queue(item=sprite_name)
+                queue.add_to_queue(item=sprite_name) # add the item collected to our queue
                 self.collected_items.append(sprite_name)
-                self.play_audio(sprite_name)
-                self.show_queue(ASSETS[sprite_name])
-                self.button()
+                self.play_audio(sprite_name) # play the right sound
+                self.show_queue(ASSETS[sprite_name]) # show the items in the queue
+                self.button() # spawn in the Reset button
 
         for taco in arcade.check_for_collision_with_list(self.player, self.taco_list):
             taco.remove_from_sprite_lists()
-            new_fullness = self.health_bar.get_fullness() - 0.10
+            # decrease the health bar by 0.25
+            new_fullness = self.health_bar.get_fullness() - 0.25
             self.health_bar.set_fullness(max(0.0, new_fullness))
+            # restarts the player back to the start
             self.player.center_x = 120
             self.player.center_y = 430
 
@@ -537,20 +548,24 @@ class GameView(arcade.View):
         ):
             llama.remove_from_sprite_lists()
             if self.items_order:
+                # remove the first item in the list of correct order
+                # display this item as a hint
                 instrument = self.items_order.pop(0)
-                file_path, scale = self.black_items[instrument]
+                file_path, scale = ASSETS[instrument]
                 self.show_hint(file_path, scale)
 
         for water in arcade.check_for_collision_with_list(
             self.player, self.scene["Water"]
         ):
             water.remove_from_sprite_lists()
+            # increase the health bar by 0.5 when water collected
             new_fullness = self.health_bar.get_fullness() + 0.5
             self.health_bar.set_fullness(min(1.0, new_fullness))
 
         for rose in arcade.check_for_collision_with_list(
             self.player, self.scene["Roses"]
         ):
+            # increases the score by 10
             rose.remove_from_sprite_lists()
             self.score += 10
 
@@ -558,11 +573,14 @@ class GameView(arcade.View):
             self.player, self.scene["Senorita"]
         ):
             self.queue = queue.get_queue()
+            print("collision detected")
 
             if (
                 self.level == 2
                 and queue.check_order(self.queue, self.correct_order) is True
             ):
+                # when the player is on the second level and has the correct order
+                # the game is complete triggering the GameFinished view
                 end_view = GameFinished(score=self.score)
                 self.window.show_view(end_view)
                 if self.current_sound:
@@ -570,11 +588,15 @@ class GameView(arcade.View):
                 arcade.play_sound(self.full_sound)
 
             elif queue.check_order(self.queue, self.correct_order) is True:
+                # if the player isn't on the second level but has the correct
+                # order then when increase the level and set up the new level
                 senorita.remove_from_sprite_lists()
                 self.level += 1
                 self.taco_timer = 0
                 self.setup()
             else:
+                # if the queue is not correct then everything is reset
+                self.respawn_cacti()
                 self.display_queue.clear()
                 queue.clear_queue()
                 self.button_centre_x -= 1000
