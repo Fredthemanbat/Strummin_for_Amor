@@ -125,13 +125,13 @@
  </layer>
  <objectgroup id="6" name="Llamas">
   <object id="1" gid="108" x="1405.37" y="1699.19" width="128" height="128"/>
-  <object id="4" gid="108" x="5114.34" y="638.637" width="128" height="128"/>
+  <object id="4" gid="108" x="3061.57" y="349.062" width="128" height="128"/>
   <object id="5" gid="108" x="391.746" y="836.787" width="128" height="128"/>
  </objectgroup>
  <objectgroup id="7" name="Cactus">
-  <object id="6" gid="126" x="2431.1" y="1576.55" height="50.3361"/>
-  <object id="7" gid="126" x="4102.17" y="295.176" height="90.7213"/>
-  <object id="8" gid="126" x="5244.84" y="2349.34" height="50.3361"/>
+  <object id="6" gid="126" x="2431.1" y="1576.55" width="128" height="50.3361"/>
+  <object id="7" gid="126" x="4151.5" y="295.176" width="78.6674" height="38.4868"/>
+  <object id="8" gid="126" x="5244.84" y="2349.34" width="128" height="50.3361"/>
  </objectgroup>
  <objectgroup id="8" name="Senoritas">
   <object id="9" gid="117" x="6074.89" y="720.25" width="128" height="128"/>
